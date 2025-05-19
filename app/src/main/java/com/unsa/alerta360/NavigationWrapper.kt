@@ -4,12 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.google.firebase.auth.FirebaseAuth
 import com.unsa.alerta360.presentation.initial.InitialScreen
 import com.unsa.alerta360.presentation.login.LoginScreen
 import com.unsa.alerta360.presentation.register.RegisterScreen
 
 @Composable
-fun NavigationWrapper(navHostController: NavHostController) {
+fun NavigationWrapper(navHostController: NavHostController, auth: FirebaseAuth) {
     NavHost(navController = navHostController, startDestination = "initial") {
         composable("initial") {
             InitialScreen(
@@ -18,10 +19,10 @@ fun NavigationWrapper(navHostController: NavHostController) {
             )
         }
         composable("login") {
-            LoginScreen()
+            LoginScreen(auth)
         }
         composable("register") {
-            RegisterScreen()
+            RegisterScreen(auth)
         }
     }
 }
