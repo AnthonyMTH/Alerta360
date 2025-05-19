@@ -12,7 +12,10 @@ import com.unsa.alerta360.presentation.register.RegisterScreen
 fun NavigationWrapper(navHostController: NavHostController) {
     NavHost(navController = navHostController, startDestination = "initial") {
         composable("initial") {
-            InitialScreen()
+            InitialScreen(
+                navigateToLogin = {navHostController.navigate("login")},
+                navigateToRegister = {navHostController.navigate("register")}
+            )
         }
         composable("login") {
             LoginScreen()

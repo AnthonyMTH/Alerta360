@@ -33,7 +33,7 @@ import com.unsa.alerta360.ui.theme.color1
 import com.unsa.alerta360.ui.theme.color2
 
 @Composable
-fun InitialScreen() {
+fun InitialScreen( navigateToLogin: () -> Unit = {}, navigateToRegister: () -> Unit = {}) {
     val backgroundColor = Brush.verticalGradient(
         colors = listOf(color1, color2)
     )
@@ -67,7 +67,7 @@ fun InitialScreen() {
 
             // Botón "Iniciar Sesión"
             OutlinedButton(
-                onClick = { /* Navegar a Iniciar Sesión */ },
+                onClick = { navigateToLogin() },
                 border = BorderStroke(1.dp, Color(0xFFFDF1CE)),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = Color.Transparent,
@@ -83,7 +83,7 @@ fun InitialScreen() {
 
             // Botón "Crear Cuenta"
             Button(
-                onClick = { /* Navegar a Crear Cuenta */ },
+                onClick = { navigateToRegister() },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFFDF1CE),
                     contentColor = Color(0xFF00334D)
