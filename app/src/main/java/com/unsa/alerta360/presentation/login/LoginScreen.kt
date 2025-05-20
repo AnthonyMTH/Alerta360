@@ -1,5 +1,6 @@
 package com.unsa.alerta360.presentation.login
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
 import com.unsa.alerta360.R
 import com.unsa.alerta360.ui.theme.color1
 import com.unsa.alerta360.ui.theme.color2
@@ -44,7 +46,7 @@ import com.unsa.alerta360.ui.theme.color2
 val lightCreamColor = Color(0xFFFDF1CE) // Color crema claro
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(auth: FirebaseAuth) {
     val backgroundColor = Brush.verticalGradient(
         colors = listOf(color1, color2)
     )
@@ -140,7 +142,13 @@ fun LoginScreen() {
 
             // Botón Ingresar
             OutlinedButton(
-                onClick = { /* TODO: Acción login */ },
+                onClick = { auth.signInWithEmailAndPassword(email, password).addOnCompleteListener{ task ->
+                    if (task.isSuccessful) {
+                        Log.i("login", "LOGIN OK")
+                    } else {
+                        Log.i("login", "LOGIN FAILED")
+                    }
+                } },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
