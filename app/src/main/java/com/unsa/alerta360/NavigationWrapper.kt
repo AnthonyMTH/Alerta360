@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.google.firebase.auth.FirebaseAuth
+import com.unsa.alerta360.navigation.MainScreen
 import com.unsa.alerta360.presentation.home.HomeScreen
 import com.unsa.alerta360.presentation.initial.InitialScreen
 import com.unsa.alerta360.presentation.login.LoginScreen
@@ -21,7 +22,7 @@ fun NavigationWrapper(navHostController: NavHostController, auth: FirebaseAuth) 
         }
         composable("login") {
             LoginScreen(auth, onLoginSuccess = {
-                navHostController.navigate("home") {
+                navHostController.navigate("main") {
                     popUpTo("initial") { inclusive = true }
                     launchSingleTop = true
                 }
@@ -38,7 +39,7 @@ fun NavigationWrapper(navHostController: NavHostController, auth: FirebaseAuth) 
                 onRegistrationSuccess = {
                     // Decide a dónde navegar después de un registro exitoso.
                     // Navegar a Home y limpiar el backstack para que no pueda volver a register/initial.
-                    navHostController.navigate("home") {
+                    navHostController.navigate("main") {
                         popUpTo("initial") { inclusive = true } // Limpia hasta la pantalla inicial
                         launchSingleTop = true // Evita múltiples instancias de home
                     }
@@ -51,8 +52,8 @@ fun NavigationWrapper(navHostController: NavHostController, auth: FirebaseAuth) 
                     }
                 })
         }
-        composable("home") {
-            HomeScreen()
+        composable("main") {
+            MainScreen() // navegación con navigationBar
         }
     }
 }
