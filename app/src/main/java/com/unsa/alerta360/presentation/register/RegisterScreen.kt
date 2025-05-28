@@ -1,44 +1,24 @@
 package com.unsa.alerta360.presentation.register
 
-import android.os.Bundle
-import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.FirebaseAuth
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.unsa.alerta360.presentation.common.UiState
+import com.unsa.alerta360.presentation.login.lightCreamColor
 import com.unsa.alerta360.ui.theme.color1
 import com.unsa.alerta360.ui.theme.color2
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.unsa.alerta360.viewmodel.auth.AuthViewModel
-import com.unsa.alerta360.viewmodel.auth.RegistrationResult
 
 val DarkBlueBackground = Color(0xFF2A5F7B) // Un azul oscuro/petróleo
 val LightTextAndIcons = Color(0xFFD0E0E8) // Un gris azulado claro para texto e iconos
@@ -60,57 +40,48 @@ val arequipaDistricts = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    authViewModel: AuthViewModel = viewModel(), // Inyecta el ViewModel
-    onRegistrationSuccess: () -> Unit = {}, // Callback para navegar tras éxito
-    onNavigateToLogin: () -> Unit = {} // Callback para navegar a login)
-)
-{
-    var nombres by remember { mutableStateOf("") }
-    var apellidos by remember { mutableStateOf("") }
-    var dni by remember { mutableStateOf("") }
-    var celular by remember { mutableStateOf("") }
-    var correo by remember { mutableStateOf("") }
-    var contrasena by remember { mutableStateOf("") }
-    var direccion by remember { mutableStateOf("") }
-    var distrito by remember { mutableStateOf("") }
+    viewModel: RegisterViewModel = hiltViewModel(),
+    onRegistrationSuccess: () -> Unit,
+    onNavigateToLogin: () -> Unit
+) {
+    val nombres by viewModel.nombres.collectAsState()
+    val apellidos by viewModel.apellidos.collectAsState()
+    val dni by viewModel.dni.collectAsState()
+    val celular by viewModel.celular.collectAsState()
+    val correo by viewModel.correo.collectAsState()
+    val contrasena by viewModel.contrasena.collectAsState()
+    val direccion by viewModel.direccion.collectAsState()
+    val selectedDistrito by viewModel.distrito.collectAsState()
+    val distritoExpanded by viewModel.distritoExpanded.collectAsState()
 
-    // Para el Dropdown de distrito
-    var distritoExpanded by remember { mutableStateOf(false) }
-    var selectedDistrito by remember { mutableStateOf(arequipaDistricts.firstOrNull() ?: "") }
+    val registrationState by viewModel.registrationState.collectAsState()
+    val uiEvent by viewModel.uiEvent.collectAsState()
 
-    val registrationResult by authViewModel.registrationState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
 
-    LaunchedEffect(registrationResult) {
-        when (val result = registrationResult) {
-            is RegistrationResult.Success -> {
-                snackbarHostState.showSnackbar(
-                    message = "¡Registro exitoso!",
-                    duration = SnackbarDuration.Short
-                )
-                // kotlinx.coroutines.delay(1000)
-                onRegistrationSuccess() // Llama al callback para navegar
-                authViewModel.resetRegistrationState() // Resetea el estado
-            }
-
-            is RegistrationResult.Error -> {
-                snackbarHostState.showSnackbar(
-                    message = "Error: ${result.message}",
-                    duration = SnackbarDuration.Long
-                )
-                authViewModel.resetRegistrationState() // Resetea el estado
-            }
-
-            RegistrationResult.Loading -> {
-                // Se podría mostrar un ProgressIndicator global
-            }
-
-            RegistrationResult.Idle -> {
-                // Estado inicial o reseteado
+    LaunchedEffect(key1 = uiEvent) {
+        uiEvent?.let { event ->
+            when (event) {
+                is RegisterUiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = if (registrationState is UiState.Success) SnackbarDuration.Short else SnackbarDuration.Long
+                    )
+                    viewModel.onEventConsumed()
+                }
             }
         }
     }
+
+    LaunchedEffect(key1 = registrationState) {
+        if (registrationState is UiState.Success) {
+            // kotlinx.coroutines.delay(1000) // Considera si este delay es necesario
+            onRegistrationSuccess()
+            viewModel.resetRegistrationState()
+        }
+        // El error se maneja a través de uiEvent para el Snackbar
+    }
+
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -118,209 +89,153 @@ fun RegisterScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(color1, color2)
-                    )
-                )
-                .padding(paddingValues) // Aplicar padding del Scaffold
-                .padding(horizontal = 32.dp, vertical = 24.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(paddingValues)
+                .background(Brush.verticalGradient(listOf(color1, color2)))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                "Crear Cuenta",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = lightCreamColor
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Título e Icono ---
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Crea una\nCuenta",
-                    fontSize = 38.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = LightTextAndIcons,
-                    lineHeight = 40.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.Outlined.AccountCircle,
-                    contentDescription = "User Icon",
-                    tint = LightTextAndIcons,
-                    modifier = Modifier.size(80.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            // --- Campos de Texto ---
-            CustomOutlinedTextField(
+            OutlinedTextField(
                 value = nombres,
-                onValueChange = { nombres = it },
-                label = "Nombres"
+                onValueChange = viewModel::onNombresChange,
+                label = { Text("Nombres") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = lightCreamColor, unfocusedTextColor = lightCreamColor,
+                    focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent, cursorColor = lightCreamColor,
+                    focusedIndicatorColor = lightCreamColor, unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                    focusedLabelColor = lightCreamColor, unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
+                ),
             )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CustomOutlinedTextField(
+            OutlinedTextField(
                 value = apellidos,
-                onValueChange = { apellidos = it },
-                label = "Apellidos"
+                onValueChange = viewModel::onApellidosChange,
+                label = { Text("Apellidos") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = lightCreamColor, unfocusedTextColor = lightCreamColor,
+                    focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent, cursorColor = lightCreamColor,
+                    focusedIndicatorColor = lightCreamColor, unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                    focusedLabelColor = lightCreamColor, unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
+                ),
             )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // --- DNI ---
             OutlinedTextField(
                 value = dni,
-                onValueChange = { dni = it },
-                label = { Text("DNI", color = LightTextAndIcons) },
+                onValueChange = viewModel::onDniChange,
+                label = { Text("DNI") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = LightTextAndIcons,
-                    unfocusedTextColor = LightTextAndIcons,
-                    cursorColor = LightTextAndIcons,
-                    focusedBorderColor = TextFieldBorderFocused,
-                    unfocusedBorderColor = LightTextAndIcons,
-                    focusedLabelColor = LightTextAndIcons,
-                    unfocusedLabelColor = LightTextAndIcons
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = lightCreamColor, unfocusedTextColor = lightCreamColor,
+                    focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent, cursorColor = lightCreamColor,
+                    focusedIndicatorColor = lightCreamColor, unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                    focusedLabelColor = lightCreamColor, unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
                 ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CustomOutlinedTextField(
+            OutlinedTextField(
                 value = celular,
-                onValueChange = { celular = it },
-                label = "Celular",
-                trailingIcon = {
-                    Icon(Icons.Outlined.Phone, "Phone Icon", tint = LightTextAndIcons)
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                onValueChange = viewModel::onCelularChange,
+                label = { Text("Celular") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = lightCreamColor, unfocusedTextColor = lightCreamColor,
+                    focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent, cursorColor = lightCreamColor,
+                    focusedIndicatorColor = lightCreamColor, unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                    focusedLabelColor = lightCreamColor, unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
+                ),
             )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CustomOutlinedTextField(
+            OutlinedTextField(
                 value = correo,
-                onValueChange = { correo = it },
-                label = "Correo Electrónico",
-                trailingIcon = {
-                    Icon(Icons.Outlined.Email, "Email Icon", tint = LightTextAndIcons)
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                onValueChange = viewModel::onCorreoChange,
+                label = { Text("Correo Electrónico") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = lightCreamColor, unfocusedTextColor = lightCreamColor,
+                    focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent, cursorColor = lightCreamColor,
+                    focusedIndicatorColor = lightCreamColor, unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                    focusedLabelColor = lightCreamColor, unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
+                ),
             )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CustomOutlinedTextField(
+            OutlinedTextField(
                 value = contrasena,
-                onValueChange = { contrasena = it },
-                label = "Contraseña",
-                trailingIcon = {
-                    Icon(Icons.Outlined.Lock, "Lock Icon", tint = LightTextAndIcons)
-                },
+                onValueChange = viewModel::onContrasenaChange,
+                label = { Text("Contraseña") },
+                modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = lightCreamColor, unfocusedTextColor = lightCreamColor,
+                    focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent, cursorColor = lightCreamColor,
+                    focusedIndicatorColor = lightCreamColor, unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                    focusedLabelColor = lightCreamColor, unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
+                ),
             )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CustomOutlinedTextField(
+            OutlinedTextField(
                 value = direccion,
-                onValueChange = { direccion = it },
-                label = "Dirección"
+                onValueChange = viewModel::onDireccionChange,
+                label = { Text("Dirección") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = lightCreamColor, unfocusedTextColor = lightCreamColor,
+                    focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent, cursorColor = lightCreamColor,
+                    focusedIndicatorColor = lightCreamColor, unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                    focusedLabelColor = lightCreamColor, unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
+                ),
             )
-            Spacer(modifier = Modifier.height(12.dp))
 
-            // --- Dropdown distrito ---
             ExposedDropdownMenuBox(
                 expanded = distritoExpanded,
-                onExpandedChange = {
-                    if (registrationResult != RegistrationResult.Loading) {
-                        distritoExpanded = !distritoExpanded
-                    }
-                },
+                onExpandedChange = viewModel::onDistritoExpandedChange,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = selectedDistrito,
+                    value = selectedDistrito.ifEmpty { "Selecciona un distrito" }, // Placeholder si está vacío
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Distrito", color = LightTextAndIcons) },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = distritoExpanded)
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = LightTextAndIcons,
-                        unfocusedTextColor = LightTextAndIcons,
-                        cursorColor = LightTextAndIcons,
-                        focusedBorderColor = LightTextAndIcons,
-                        unfocusedBorderColor = LightTextAndIcons,
-                        focusedLabelColor = LightTextAndIcons,
-                        unfocusedLabelColor = LightTextAndIcons,
-                        focusedTrailingIconColor = LightTextAndIcons,
-                        unfocusedTrailingIconColor = LightTextAndIcons,
-                        disabledTextColor = LightTextAndIcons.copy(alpha = 0.7f),
-                        disabledBorderColor = LightTextAndIcons.copy(alpha = 0.5f),
-                        disabledLabelColor = LightTextAndIcons.copy(alpha = 0.7f),
-                        disabledTrailingIconColor = LightTextAndIcons.copy(alpha = 0.7f)
+                    label = { Text("Distrito") },
+                    colors = TextFieldDefaults.colors(
+                        focusedTextColor = lightCreamColor, unfocusedTextColor = lightCreamColor,
+                        focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent, cursorColor = lightCreamColor,
+                        focusedIndicatorColor = lightCreamColor, unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                        focusedLabelColor = lightCreamColor, unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
                     ),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = distritoExpanded) },
                     modifier = Modifier
-                        .menuAnchor() // Anclar el menú
-                        .fillMaxWidth(),
-                    enabled = registrationResult != RegistrationResult.Loading
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = distritoExpanded,
-                    onDismissRequest = { distritoExpanded = false },
-                    modifier = Modifier.background(DarkBlueBackground) // Fondo del menú
+                    onDismissRequest = { viewModel.onDistritoExpandedChange(false) }
                 ) {
-                    arequipaDistricts.forEach { districtName ->
+                    arequipaDistricts.forEach { district ->
                         DropdownMenuItem(
-                            text = { Text(districtName, color = LightTextAndIcons) },
+                            text = { Text(district) },
                             onClick = {
-                                selectedDistrito = districtName
-                                distritoExpanded = false
-                            },
-                            colors = MenuDefaults.itemColors(
-                                textColor = LightTextAndIcons
-                            )
+                                viewModel.onDistritoChange(district)
+                                viewModel.onDistritoExpandedChange(false)
+                            }
                         )
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(30.dp))
-
-            // --- Botón Crear Cuenta ---
             Button(
-                onClick = {
-                    // Validaciones básicas
-                    if (nombres.isBlank() || apellidos.isBlank() || dni.isBlank() ||
-                        celular.isBlank() || correo.isBlank() || contrasena.isBlank() ||
-                        direccion.isBlank() || selectedDistrito.isBlank()) {
-                        Toast.makeText(context, "Por favor, completa todos los campos.", Toast.LENGTH_LONG).show()
-                        return@Button
-                    }
-
-                    if (!android.util.Patterns.EMAIL_ADDRESS.matcher(correo).matches()) {
-                        Toast.makeText(context, "Correo electrónico no válido.", Toast.LENGTH_LONG).show()
-                        return@Button
-                    }
-
-                    if (contrasena.length < 6) {
-                        Toast.makeText(context, "La contraseña debe tener al menos 6 caracteres.", Toast.LENGTH_LONG).show()
-                        return@Button
-                    }
-
-                    authViewModel.registerUser(
-                        email = correo.trim(),
-                        password = contrasena,
-                        nombres = nombres.trim(),
-                        apellidos = apellidos.trim(),
-                        dni = dni.trim(),
-                        celular = celular.trim(),
-                        direccion = direccion.trim(),
-                        distrito = selectedDistrito
-                    )
-                },
+                onClick = { viewModel.registerUser() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -329,10 +244,9 @@ fun RegisterScreen(
                     containerColor = ButtonBeigeBackground,
                     contentColor = ButtonDarkText
                 ),
-                enabled = registrationResult != RegistrationResult.Loading // Deshabilita el botón mientras carga
-
+                enabled = registrationState !is UiState.Loading
             ) {
-                if (registrationResult == RegistrationResult.Loading) {
+                if (registrationState == UiState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = ButtonDarkText,
@@ -342,60 +256,9 @@ fun RegisterScreen(
                     Text("Crear Cuenta", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // --- Enlace "¿Ya tienes cuenta?" ---
-            Text(
-                text = "¿Ya tienes cuenta?",
-                color = LinkTextColor,
-                fontSize = 14.sp,
-                textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable(enabled = registrationResult != RegistrationResult.Loading) {
-                    onNavigateToLogin() }
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
+            TextButton(onClick = onNavigateToLogin, modifier = Modifier.fillMaxWidth()) {
+                Text("¿Ya tienes cuenta? Inicia Sesión", color = lightCreamColor)
+            }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CustomOutlinedTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    modifier: Modifier = Modifier,
-    trailingIcon: @Composable (() -> Unit)? = null,
-    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    enabled: Boolean = true // Añadido para deshabilitar
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label, color = LightTextAndIcons) },
-        modifier = modifier.fillMaxWidth(),
-        singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = LightTextAndIcons,
-            unfocusedTextColor = LightTextAndIcons,
-            cursorColor = LightTextAndIcons,
-            focusedBorderColor = LightTextAndIcons,
-            unfocusedBorderColor = LightTextAndIcons,
-            focusedLabelColor = LightTextAndIcons,
-            unfocusedLabelColor = LightTextAndIcons,
-            disabledTrailingIconColor = LightTextAndIcons.copy(alpha = 0.7f),
-            focusedTrailingIconColor = LightTextAndIcons,
-            unfocusedTrailingIconColor = LightTextAndIcons,
-            disabledTextColor = LightTextAndIcons.copy(alpha = 0.7f),
-            disabledBorderColor = LightTextAndIcons.copy(alpha = 0.5f),
-            disabledLabelColor = LightTextAndIcons.copy(alpha = 0.7f)
-        ),
-        trailingIcon = trailingIcon,
-        visualTransformation = visualTransformation,
-        keyboardOptions = keyboardOptions,
-        enabled = enabled // Aplicar estado enabled
-    )
 }

@@ -1,6 +1,6 @@
-package com.unsa.alerta360.data
+package com.unsa.alerta360.data.local
 
-data class UserProfile(
+data class UserData(
     val uid: String = "", // Para guardar el UID también en el documento, puede ser útil
     val nombres: String = "",
     val apellidos: String = "",
