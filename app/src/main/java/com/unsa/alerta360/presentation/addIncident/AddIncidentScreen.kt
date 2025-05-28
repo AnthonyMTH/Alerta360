@@ -83,12 +83,12 @@ fun AddIncidentScreen(viewModel: AddIncidentViewModel = viewModel()) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(16.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp)
 
         ) {
             Text(
                 text = "Crear incidencia",
-                style = MaterialTheme.typography.headlineSmall.copy(color = Color.White, fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.headlineSmall.copy(color = lightCreamColor, fontWeight = FontWeight.ExtraBold)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -210,10 +210,9 @@ fun DropdownSelector(
     onSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    Log.d("EXPANDED", expanded.toString())
 
     ExposedDropdownMenuBox(
-         expanded = expanded,
+        expanded = expanded,
         onExpandedChange = { expanded = !expanded }
     ) {
         OutlinedTextField(
@@ -221,21 +220,17 @@ fun DropdownSelector(
             onValueChange = {},
             label = { Text(label) },
             readOnly = true,
-            modifier = Modifier
-                .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true).
-            fillMaxWidth(),
-
-
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-
             },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(), // O puedes quitar completamente esto
             colors = TextFieldDefaults.colors(
                 focusedTextColor = lightCreamColor,
                 unfocusedTextColor = lightCreamColor,
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
                 cursorColor = lightCreamColor,
                 focusedIndicatorColor = lightCreamColor,
                 unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
@@ -244,10 +239,10 @@ fun DropdownSelector(
             )
         )
 
-        DropdownMenu(
+        // ✅ Aquí está el cambio importante
+        ExposedDropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false },
-            //modifier = Modifier.fillMaxWidth()
+            onDismissRequest = { expanded = false }
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
