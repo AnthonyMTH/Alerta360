@@ -50,7 +50,7 @@ fun InitialScreen( navigateToLogin: () -> Unit = {}, navigateToRegister: () -> U
         ) {
             /*// Icono de alerta
             Icon(
-                painter = painterResource(id = R.drawable.ic_alerta), // Asegúrate de tener este vector en tu carpeta drawable
+                painter = painterResource(id = R.drawable.ic_alerta),
                 contentDescription = "Alerta",
                 tint = Color(0xFFFDF1CE),
                 modifier = Modifier
