@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -29,6 +30,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,13 +43,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.unsa.alerta360.R
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.unsa.alerta360.presentation.common.UiState
 import com.unsa.alerta360.ui.theme.color1
 import com.unsa.alerta360.ui.theme.color2
 
@@ -55,55 +54,57 @@ val lightCreamColor = Color(0xFFFDF1CE) // Color crema claro
 
 @Composable
 fun LoginScreen(
-    auth: FirebaseAuth, onLoginSuccess: () -> Unit = {}, // Callback para navegar tras éxito
-    onNavigateToRegister: () -> Unit = {}
+    viewModel: LoginViewModel = hiltViewModel(), // ViewModel se obtiene por defecto
+    onLoginSuccess: () -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
-    val backgroundColor = Brush.verticalGradient(
-        colors = listOf(color1, color2)
-    )
+    val email by viewModel.email.collectAsState()
+    val password by viewModel.password.collectAsState()
+    val loginState by viewModel.loginState.collectAsState()
+    val uiEvent by viewModel.uiEvent.collectAsState()
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    // Estado para el mensaje de error y SnackbarHostState
-    var loginErrorMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // LaunchedEffect para mostrar el Snackbar cuando cambie el mensaje de error
-    LaunchedEffect(loginErrorMessage) {
-        loginErrorMessage?.let { message ->
-            snackbarHostState.showSnackbar(
-                message = message,
-                duration = SnackbarDuration.Long
-            )
-            loginErrorMessage = null // Resetea el mensaje después de mostrarlo
+    LaunchedEffect(key1 = uiEvent) {
+        uiEvent?.let { event ->
+            when (event) {
+                is LoginUiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = SnackbarDuration.Long
+                    )
+                    viewModel.onEventConsumed() // Marcar como consumido
+                }
+            }
         }
     }
 
+    LaunchedEffect(key1 = loginState) {
+        if (loginState is UiState.Success) {
+            onLoginSuccess()
+            viewModel.resetLoginState() // Evitar re-navegación
+        }
+        // El error se maneja a través de uiEvent para el Snackbar
+    }
+
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color.Transparent // Para que el fondo del Box se vea
+        containerColor = Color.Transparent
     ) { paddingValues ->
+        val backgroundColor = Brush.verticalGradient(colors = listOf(color1, color2))
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
                 .background(brush = backgroundColor),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp),
-                modifier = Modifier
-                    .fillMaxWidth(0.85f)
+                modifier = Modifier.fillMaxWidth(0.85f)
             ) {
-                /*// Icono saludo
-            Icon(
-                painter = painterResource(id = R.drawable.ic_saludo),
-                contentDescription = "Bienvenido",
-                tint = lightCreamColor,
-                modifier = Modifier.size(70.dp)
-            )*/
-
                 Text(
                     text = "Bienvenido\nde Vuelta",
                     color = lightCreamColor,
@@ -112,115 +113,64 @@ fun LoginScreen(
                     textAlign = TextAlign.Center,
                     lineHeight = 36.sp
                 )
-
-                // Campo Correo
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { email = it },
-                    label = {
-                        Text(
-                            "Correo Electrónico",
-                            color = lightCreamColor.copy(alpha = 0.7f)
-                        )
-                    }, // Label un poco más tenue
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = "Icono de Email",
-                            tint = lightCreamColor
-                        )
-                    },
+                    onValueChange = { viewModel.onEmailChange(it) },
+                    label = { Text("Correo Electrónico", color = lightCreamColor.copy(alpha = 0.7f)) },
+                    leadingIcon = { Icon(Icons.Default.Email, "Icono de Email", tint = lightCreamColor) },
                     colors = TextFieldDefaults.colors(
-                        focusedTextColor = lightCreamColor,
-                        unfocusedTextColor = lightCreamColor,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        cursorColor = lightCreamColor,
-                        focusedIndicatorColor = lightCreamColor, // Color del borde cuando está enfocado
-                        unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f), // Color del borde cuando no está enfocado
-                        focusedLabelColor = lightCreamColor, // Color del label cuando está enfocado
-                        unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f) // Color del label
+                        focusedTextColor = lightCreamColor, unfocusedTextColor = lightCreamColor,
+                        focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent, cursorColor = lightCreamColor,
+                        focusedIndicatorColor = lightCreamColor, unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                        focusedLabelColor = lightCreamColor, unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
                     ),
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = loginState is UiState.Error && uiEvent != null // Mostrar error si el estado es Error y hay un evento de Snackbar
                 )
-
-                // Campo Contraseña
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = { viewModel.onPasswordChange(it) },
                     label = { Text("Contraseña", color = lightCreamColor.copy(alpha = 0.7f)) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Icono de Contraseña",
-                            tint = lightCreamColor
-                        )
-                    },
+                    leadingIcon = { Icon(Icons.Default.Lock, "Icono de Contraseña", tint = lightCreamColor) },
                     visualTransformation = PasswordVisualTransformation(),
                     colors = TextFieldDefaults.colors(
-                        focusedTextColor = lightCreamColor,
-                        unfocusedTextColor = lightCreamColor,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        cursorColor = lightCreamColor,
-                        focusedIndicatorColor = lightCreamColor,
-                        unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
-                        focusedLabelColor = lightCreamColor,
-                        unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
+                        focusedTextColor = lightCreamColor, unfocusedTextColor = lightCreamColor,
+                        focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent, cursorColor = lightCreamColor,
+                        focusedIndicatorColor = lightCreamColor, unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                        focusedLabelColor = lightCreamColor, unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
                     ),
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = loginState is UiState.Error && uiEvent != null
                 )
-
-                // Botón Ingresar
                 OutlinedButton(
-                    onClick = {
-                        auth.signInWithEmailAndPassword(email, password)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    Log.i("login", "LOGIN OK")
-                                    onLoginSuccess()
-                                } else {
-                                    val exception = task.exception
-                                    loginErrorMessage = when (exception) {
-                                        is FirebaseAuthInvalidUserException -> "El correo electrónico no está registrado."
-                                        is FirebaseAuthInvalidCredentialsException -> "La contraseña es incorrecta."
-                                        else -> "Error al iniciar sesión. Verifica tus credenciales e inténtalo de nuevo."
-                                    }
-                                    Log.i("login", "LOGIN FAILED")
-                                }
-                            }
-                    },
+                    onClick = { viewModel.loginUser() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
-                        .padding(top = 16.dp), // Espacio extra arriba del botón
+                        .padding(top = 16.dp),
                     shape = RoundedCornerShape(25.dp),
                     border = BorderStroke(1.dp, lightCreamColor),
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = Color.Transparent,
                         contentColor = lightCreamColor
-                    )
+                    ),
+                    enabled = loginState !is UiState.Loading
                 ) {
-                    Text("Ingresar", fontSize = 16.sp)
+                    if (loginState is UiState.Loading) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = lightCreamColor)
+                    } else {
+                        Text("Ingresar", fontSize = 16.sp)
+                    }
                 }
-
-                // Texto inferior
                 TextButton(
-                    onClick = {
-                        onNavigateToRegister()
-                    },
+                    onClick = { onNavigateToRegister() },
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
-                    Text(
-                        text = "¿No tienes cuenta?",
-                        color = lightCreamColor,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center
-                    )
+                    Text("¿No tienes cuenta?", color = lightCreamColor, fontSize = 14.sp, textAlign = TextAlign.Center)
                 }
             }
         }

@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.googleServices)
     alias(libs.plugins.crashlytics)
 
+    alias(libs.plugins.kotlinAndroidKsp)
+    alias(libs.plugins.hiltAndroid)
 }
 
 android {
@@ -66,4 +68,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    /*implementation("com.google.dagger:hilt-android:2.50") // Usa la última versión
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0") // Para @hiltViewModel
+    ksp("com.google.dagger:hilt-compiler:2.50")*/
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 }
