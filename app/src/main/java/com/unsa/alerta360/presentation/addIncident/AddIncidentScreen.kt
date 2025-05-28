@@ -15,15 +15,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -38,10 +41,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import com.unsa.alerta360.ui.theme.color1
 import com.unsa.alerta360.ui.theme.color2
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.unsa.alerta360.presentation.login.lightCreamColor
 
 
 @Composable
@@ -56,6 +59,7 @@ fun AddIncidentScreen(viewModel: AddIncidentViewModel = viewModel()) {
     val departamento = viewModel.departamento
     val provincia = viewModel.provincia
     val distrito = viewModel.distrito
+    val description = viewModel.description
     val imageUri = viewModel.imageUri
 
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -73,9 +77,12 @@ fun AddIncidentScreen(viewModel: AddIncidentViewModel = viewModel()) {
             .background(brush = backgroundColor),
         contentAlignment = Alignment.TopCenter
     ) {
+        val scrollState = rememberScrollState()
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(scrollState)
                 .padding(16.dp)
 
         ) {
@@ -90,11 +97,44 @@ fun AddIncidentScreen(viewModel: AddIncidentViewModel = viewModel()) {
                 value = titulo,
                 onValueChange = viewModel::onTituloChange,
                 label = { Text("Título", fontWeight = FontWeight.Bold) },
-                placeholder = { Text("Ingresa una descripción...") },
                 modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = lightCreamColor,
+                    unfocusedTextColor = lightCreamColor,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    cursorColor = lightCreamColor,
+                    focusedIndicatorColor = lightCreamColor, // Color del borde cuando está enfocado
+                    unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f), // Color del borde cuando no está enfocado
+                    focusedLabelColor = lightCreamColor, // Color del label cuando está enfocado
+                    unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f) // Color del label
+                ),
 
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                label = { Text("Descripción") },
+                value = description,
+                onValueChange = viewModel::onDescriptionChange,
+                modifier = Modifier
+                    .fillMaxWidth().height(100.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = lightCreamColor,
+                    unfocusedTextColor = lightCreamColor,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    cursorColor = lightCreamColor,
+                    focusedIndicatorColor = lightCreamColor, // Color del borde cuando está enfocado
+                    unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f), // Color del borde cuando no está enfocado
+                    focusedLabelColor = lightCreamColor, // Color del label cuando está enfocado
+                    unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f) // Color del label
+                ),
+
+            )
             Spacer(modifier = Modifier.height(16.dp))
 
             DropdownSelector(
@@ -111,6 +151,18 @@ fun AddIncidentScreen(viewModel: AddIncidentViewModel = viewModel()) {
                 onValueChange = viewModel::onDireccionChange,
                 label = { Text("Av. / Calle / Jirón") },
                 modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = lightCreamColor,
+                    unfocusedTextColor = lightCreamColor,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    cursorColor = lightCreamColor,
+                    focusedIndicatorColor = lightCreamColor, // Color del borde cuando está enfocado
+                    unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f), // Color del borde cuando no está enfocado
+                    focusedLabelColor = lightCreamColor, // Color del label cuando está enfocado
+                    unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f) // Color del label
+                ),
 
             )
 
@@ -149,7 +201,7 @@ fun AddIncidentScreen(viewModel: AddIncidentViewModel = viewModel()) {
     }
 
 }
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownSelector(
     label: String,
@@ -158,45 +210,54 @@ fun DropdownSelector(
     onSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    Log.d("EXPANDED", expanded.toString())
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .zIndex(1f)
-            .padding(bottom = 8.dp)
+    ExposedDropdownMenuBox(
+         expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
     ) {
         OutlinedTextField(
             value = selected,
-            onValueChange = {}, // No se necesita cambiar el valor aquí
+            onValueChange = {},
             label = { Text(label) },
             readOnly = true,
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = true }, // Abre el menú al hacer clic
+                .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true).
+            fillMaxWidth(),
+
+
             trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = null
-                )
-            }
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+
+            },
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = lightCreamColor,
+                unfocusedTextColor = lightCreamColor,
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                cursorColor = lightCreamColor,
+                focusedIndicatorColor = lightCreamColor,
+                unfocusedIndicatorColor = lightCreamColor.copy(alpha = 0.7f),
+                focusedLabelColor = lightCreamColor,
+                unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f)
+            )
         )
 
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth()
+            //modifier = Modifier.fillMaxWidth()
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option) },
                     onClick = {
-                        onSelected(option) // Cambia el valor seleccionado
-                        expanded = false // Cierra el menú
+                        onSelected(option)
+                        expanded = false
                     }
                 )
             }
         }
     }
 }
-
-

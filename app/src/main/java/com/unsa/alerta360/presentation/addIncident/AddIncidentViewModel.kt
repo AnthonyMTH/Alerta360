@@ -26,6 +26,9 @@ class AddIncidentViewModel : ViewModel() {
         private set
     var imageUri by mutableStateOf<Uri?>(null)
 
+    var description by mutableStateOf("")
+        private  set
+
     val tiposIncidente = listOf("Accidente", "Robo", "Otro")
     val departamentos = listOf("Lima", "Cusco", "Arequipa")
     val provincias = listOf("Lima", "Urubamba", "Caylloma")
@@ -38,6 +41,7 @@ class AddIncidentViewModel : ViewModel() {
     fun onProvinciaChange(value: String) { provincia = value }
     fun onDistritoChange(value: String) { distrito = value }
     fun onFileSelected(value: Uri) {imageUri = value}
+    fun onDescriptionChange(value: String) {description = value}
 
     fun cancelar() {
 
