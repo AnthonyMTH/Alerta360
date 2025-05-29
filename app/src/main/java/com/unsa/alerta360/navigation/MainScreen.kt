@@ -29,7 +29,7 @@ fun MainScreen() {
         ) {
             composable("home") { HomeScreen() }
             composable("map") { MapScreen() }
-            composable("addIncident") { AddIncidentScreen() }
+            composable("addIncident") { AddIncidentScreen(navController = mainNavController) }
             composable("messages") { MessagesScreen() }
             composable("account") { AccountScreen() }
         }

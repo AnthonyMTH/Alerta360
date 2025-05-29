@@ -20,17 +20,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,26 +41,41 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.unsa.alerta360.ui.theme.color1
 import com.unsa.alerta360.ui.theme.color2
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unsa.alerta360.presentation.login.lightCreamColor
 
 
 @Composable
-fun AddIncidentScreen(viewModel: AddIncidentViewModel = viewModel()) {
+fun AddIncidentScreen( navController: NavController) {
+
+    val viewModel: AddIncidentViewModel = hiltViewModel()
+
     val backgroundColor = Brush.verticalGradient(
         colors = listOf(color1, color2)
     )
 
-    val titulo = viewModel.titulo
-    val tipoIncidente = viewModel.tipoIncidente
-    val direccion = viewModel.direccion
-    val departamento = viewModel.departamento
-    val provincia = viewModel.provincia
-    val distrito = viewModel.distrito
-    val description = viewModel.description
-    val imageUri = viewModel.imageUri
+    val titulo by viewModel.titulo.collectAsState()
+    val tipoIncidente by viewModel.tipoIncidente.collectAsState()
+    val direccion by viewModel.direccion.collectAsState()
+    val departamento by viewModel.departamento.collectAsState()
+    val provincia by viewModel.provincia.collectAsState()
+    val distrito by viewModel.distrito.collectAsState()
+    val description by viewModel.description.collectAsState()
+    val imageUri by viewModel.imageUri.collectAsState()
+
+    val uiEvent by viewModel.uiEvent.collectAsState()
+
+    LaunchedEffect(uiEvent) {
+        if (uiEvent is AddIncidentEvent.NavigateBack) {
+            navController.popBackStack()
+            viewModel.clearEvent()
+        }
+    }
+
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -179,10 +194,18 @@ fun AddIncidentScreen(viewModel: AddIncidentViewModel = viewModel()) {
                     .fillMaxWidth()
                     .height(120.dp)
                     .border(1.dp, Color.White, shape = RoundedCornerShape(4.dp))
-                    .clickable { filePickerLauncher.launch("*/*") },
+                    .clickable { filePickerLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                Text("Subir foto", color = Color.White)
+                if (imageUri != null) {
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = "Imagen seleccionada",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text("Subir foto", color = Color.White)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -196,6 +219,19 @@ fun AddIncidentScreen(viewModel: AddIncidentViewModel = viewModel()) {
                 border = BorderStroke(1.dp, Color.White)
             ) {
                 Text("Cancelar", color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button (
+                onClick = { viewModel.guardar() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = lightCreamColor),
+                border = BorderStroke(1.dp, Color.White)
+            ) {
+                Text("Guardar", color = color2)
             }
         }
     }
@@ -225,7 +261,7 @@ fun DropdownSelector(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(), // O puedes quitar completamente esto
+                .menuAnchor(),
             colors = TextFieldDefaults.colors(
                 focusedTextColor = lightCreamColor,
                 unfocusedTextColor = lightCreamColor,
@@ -239,7 +275,6 @@ fun DropdownSelector(
             )
         )
 
-        // ✅ Aquí está el cambio importante
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
