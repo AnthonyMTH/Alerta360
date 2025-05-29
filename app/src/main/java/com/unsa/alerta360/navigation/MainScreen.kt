@@ -36,7 +36,7 @@ fun MainScreen() {
                 IncidentScreen(viewModel = incidentViewModel)
             }
             composable("map") { MapScreen() }
-            composable("addIncident") { AddIncidentScreen() }
+            composable("addIncident") { AddIncidentScreen(navController = mainNavController) }
             composable("messages") { MessagesScreen() }
             composable("account") { AccountScreen() }
         }

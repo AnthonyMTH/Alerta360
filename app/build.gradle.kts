@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.unsa.alerta360"
-        minSdk = 35
+        minSdk = 34
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -67,6 +67,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(libs.coil.compose)
+
 
     /*implementation("com.google.dagger:hilt-android:2.50") // Usa la última versión
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0") // Para @hiltViewModel
