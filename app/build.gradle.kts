@@ -73,6 +73,12 @@ dependencies {
     /*implementation("com.google.dagger:hilt-android:2.50") // Usa la última versión
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0") // Para @hiltViewModel
     ksp("com.google.dagger:hilt-compiler:2.50")*/
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+
+// Gson converter (para manejar JSON automáticamente)
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)

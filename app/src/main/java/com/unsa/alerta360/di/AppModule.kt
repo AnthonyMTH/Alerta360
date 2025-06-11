@@ -10,6 +10,9 @@ import com.unsa.alerta360.domain.usecase.auth.RegisterUserUseCase
 import com.unsa.alerta360.domain.usecase.user.SaveUserDetailsUseCase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.unsa.alerta360.data.network.IncidentApi
+import com.unsa.alerta360.data.repository.IncidentRepositoryImpl
+import com.unsa.alerta360.domain.repository.IncidentRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,6 +36,11 @@ object RepositoryModule {
     @Singleton
     fun provideUserRepository(firestore: FirebaseFirestore): UserRepository {
         return UserRepositoryImpl(firestore)
+    }
+    @Provides
+    @Singleton
+    fun provideIncidentRepository(api: IncidentApi): IncidentRepository {
+        return IncidentRepositoryImpl(api)
     }
 }
 

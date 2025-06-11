@@ -3,9 +3,13 @@ package com.unsa.alerta360.presentation.addIncident
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.unsa.alerta360.domain.model.Incident
+import com.unsa.alerta360.domain.usecase.incident.CreateIncidentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class AddIncidentEvent {
@@ -13,7 +17,7 @@ sealed class AddIncidentEvent {
 }
 
 @HiltViewModel
-class AddIncidentViewModel @Inject constructor() : ViewModel() {
+class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase: CreateIncidentUseCase) : ViewModel() {
 
     private val _titulo = MutableStateFlow("")
     val titulo: StateFlow<String> = _titulo
@@ -61,14 +65,26 @@ class AddIncidentViewModel @Inject constructor() : ViewModel() {
     }
 
     fun guardar() {
-        Log.d("AddIncidentViewModel", "Título: ${_titulo.value}")
-        Log.d("AddIncidentViewModel", "Tipo Incidente: ${_tipoIncidente.value}")
-        Log.d("AddIncidentViewModel", "Dirección: ${_direccion.value}")
-        Log.d("AddIncidentViewModel", "Departamento: ${_departamento.value}")
-        Log.d("AddIncidentViewModel", "Provincia: ${_provincia.value}")
-        Log.d("AddIncidentViewModel", "Distrito: ${_distrito.value}")
-        Log.d("AddIncidentViewModel", "Descripción: ${_description.value}")
-        Log.d("AddIncidentViewModel", "Imagen URI: ${_imageUri.value}")
+
+        viewModelScope.launch {
+            val newIncident = Incident(
+                description = _description.value,
+                incidentType = _tipoIncidente.value,
+                ubication = _direccion.value,
+                geolocation = "-1233213, 123123", // Se calculará luego con FusedLocationProviderClient
+                evidence = listOf("https://elbuho.pe/wp-content/uploads/2024/05/Noticiero-17-de-mayo-2024.jpeg",
+                    "https://i.ytimg.com/vi/VCOTrE-1j-U/maxresdefault.jpg"), // datos mock
+                user_id = "682f18e1d21cf2679fa4fa81", // ID luego se integrará con usuario autenticado
+                title = _titulo.value
+            )
+            val result = createIncidentUseCase(newIncident)
+            if (result != null) {
+                _uiEvent.value = AddIncidentEvent.NavigateBack
+            } else {
+                Log.e("AddIncident", "Error al crear incidente")
+            }
+        }
+
     }
     fun clearEvent() {
         _uiEvent.value = null
