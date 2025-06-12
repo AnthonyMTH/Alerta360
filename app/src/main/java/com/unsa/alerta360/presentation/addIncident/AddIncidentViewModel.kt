@@ -2,6 +2,7 @@ package com.unsa.alerta360.presentation.addIncident
 
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unsa.alerta360.domain.model.Incident
@@ -14,6 +15,9 @@ import javax.inject.Inject
 
 sealed class AddIncidentEvent {
     object NavigateBack : AddIncidentEvent()
+    object Loading : AddIncidentEvent()
+    data class Success(val message: String) : AddIncidentEvent()
+    data class Error(val message: String) : AddIncidentEvent()
 }
 
 @HiltViewModel
@@ -66,6 +70,15 @@ class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase
 
     fun guardar() {
 
+
+        _uiEvent.value = AddIncidentEvent.Loading
+
+        if (_titulo.value.isBlank() || _description.value.isBlank() || _tipoIncidente.value.isBlank() || _direccion.value.isBlank()) {
+            _uiEvent.value = AddIncidentEvent.Error("Por favor, complete todos los campos requeridos.")
+            return
+        }
+
+
         viewModelScope.launch {
             val newIncident = Incident(
                 description = _description.value,
@@ -77,11 +90,20 @@ class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase
                 user_id = "682f18e1d21cf2679fa4fa81", // ID luego se integrará con usuario autenticado
                 title = _titulo.value
             )
-            val result = createIncidentUseCase(newIncident)
-            if (result != null) {
-                _uiEvent.value = AddIncidentEvent.NavigateBack
-            } else {
-                Log.e("AddIncident", "Error al crear incidente")
+            try {
+                val result = createIncidentUseCase(newIncident)
+                if (result != null) {
+                    // Emitir estado de "Éxito"
+                    //_uiEvent.value = AddIncidentEvent.NavigateBack
+                    _uiEvent.value = AddIncidentEvent.Success("Incidente creado con éxito.")
+
+                } else {
+                    // Emitir estado de "Error" en caso de fallo
+                    _uiEvent.value = AddIncidentEvent.Error("Error al crear incidente.")
+                }
+            } catch (e: Exception) {
+                // Capturar excepciones y emitir estado de error
+                _uiEvent.value = AddIncidentEvent.Error("Excepción al crear incidente: ${e.message}")
             }
         }
 

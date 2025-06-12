@@ -11,7 +11,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object NetworkModule {
+object Network1Module {
 
     private const val BASE_URL = "https://backend-alerta360.onrender.com/api/v1/"
 
