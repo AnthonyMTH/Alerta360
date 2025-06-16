@@ -231,7 +231,7 @@ fun AddIncidentScreen( navController: NavController) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button (
-                onClick = { viewModel.guardar() },
+                onClick = { viewModel.guardar(context) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
