@@ -1,5 +1,6 @@
 package com.unsa.alerta360.di
 
+import com.unsa.alerta360.data.network.AccountApiService
 import com.unsa.alerta360.data.network.IncidentApi
 import dagger.Module
 import dagger.Provides
@@ -15,6 +16,7 @@ object NetworkModule {
 
     private const val BASE_URL = "https://backend-alerta360.onrender.com/api/v1/"
 
+
     @Provides
     @Singleton
     fun provideRetrofit(): Retrofit = Retrofit.Builder()
@@ -26,4 +28,10 @@ object NetworkModule {
     @Singleton
     fun provideIncidentApi(retrofit: Retrofit): IncidentApi =
         retrofit.create(IncidentApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAccountApiService(retrofit: Retrofit): AccountApiService =
+        retrofit.create(AccountApiService::class.java)
+
 }
