@@ -13,6 +13,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.unsa.alerta360.data.network.IncidentApi
 import com.unsa.alerta360.data.repository.IncidentRepositoryImpl
 import com.unsa.alerta360.domain.repository.IncidentRepository
+import com.unsa.alerta360.domain.usecase.incident.CreateIncidentUseCase
+import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -73,5 +75,17 @@ object UseCaseModule {
     @ViewModelScoped
     fun provideSaveUserDetailsUseCase(userRepository: UserRepository): SaveUserDetailsUseCase {
         return SaveUserDetailsUseCase(userRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideCreateIncidentUseCase(incidentRepository: IncidentRepository): CreateIncidentUseCase {
+        return CreateIncidentUseCase(incidentRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideGetAllIncidentsUseCase(incidentRepository: IncidentRepository): GetAllIncidentsUseCase {
+        return GetAllIncidentsUseCase(incidentRepository)
     }
 }

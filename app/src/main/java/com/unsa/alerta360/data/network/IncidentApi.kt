@@ -8,7 +8,7 @@ import retrofit2.http.POST
 
 interface IncidentApi {
 
-    @GET("incidents")
+    @GET("incident")
     suspend fun getAllIncidents(): Response<List<IncidentDto>>
 
     @POST("incident/create")

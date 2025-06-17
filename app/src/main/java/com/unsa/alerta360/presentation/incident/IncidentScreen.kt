@@ -1,10 +1,12 @@
 package com.unsa.alerta360.presentation.incident
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
@@ -23,7 +25,11 @@ import com.unsa.alerta360.ui.theme.color1
 import com.unsa.alerta360.ui.theme.color2
 
 @Composable
-fun IncidentScreen(viewModel: IncidentViewModel = viewModel()) {
+fun IncidentScreen(
+    incidentId: String,
+    onNavigateBack: () -> Unit,
+    viewModel: IncidentViewModel = viewModel()
+) {
     val incident by viewModel.currentIncident
 
     val backgroundColor = Brush.verticalGradient(
@@ -38,6 +44,29 @@ fun IncidentScreen(viewModel: IncidentViewModel = viewModel()) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Botón de navegación hacia atrás
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                IconButton(
+                    onClick = onNavigateBack,
+                    modifier = Modifier
+                        .background(
+                            Color.White.copy(alpha = 0.2f),
+                            RoundedCornerShape(8.dp)
+                        )
+                ) {
+                    Icon(
+                        Icons.Default.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = Color.White
+                    )
+                }
+            }
+            
             Text(
                 text = it.title,
                 fontSize = 24.sp,
@@ -52,7 +81,8 @@ fun IncidentScreen(viewModel: IncidentViewModel = viewModel()) {
                     .fillMaxHeight(0.8f)
                     .padding(vertical = 8.dp),
                 shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(8.dp)
+                elevation = CardDefaults.cardElevation(8.dp),
+
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
