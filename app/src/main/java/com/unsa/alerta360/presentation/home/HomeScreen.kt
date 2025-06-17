@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.unsa.alerta360.domain.model.Incident
+import com.unsa.alerta360.domain.model.IncidentWithUser
 import com.unsa.alerta360.presentation.login.lightCreamColor
 import com.unsa.alerta360.ui.theme.color1
 import com.unsa.alerta360.ui.theme.color2
@@ -52,19 +53,20 @@ fun HomeScreen(navController: NavController? = null) {
             modifier = Modifier.padding(vertical = 16.dp)
         )
         
-        // Tabs
+        // Tabs con diseño de subrayado
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.Start
         ) {
-            TabButton(
+            TabButtonWithUnderline(
                 text = "Todos",
                 isSelected = selectedTab is TabSelection.Todos,
                 onClick = { viewModel.selectTab(TabSelection.Todos) }
             )
-            TabButton(
+            Spacer(modifier = Modifier.width(32.dp))
+            TabButtonWithUnderline(
                 text = "Mi historial",
                 isSelected = selectedTab is TabSelection.MiHistorial,
                 onClick = { viewModel.selectTab(TabSelection.MiHistorial) }
@@ -117,12 +119,12 @@ fun HomeScreen(navController: NavController? = null) {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(state.incidents) { incident ->
+                        items(state.incidents) { incidentWithUser ->
                             IncidentCard(
-                                incident = incident,
+                                incidentWithUser = incidentWithUser,
                                 onClick = {
                                     // Navegar a la pantalla de detalles del incidente
-                                    navController?.navigate("incident_detail/${incident._id}")
+                                    navController?.navigate("incident_detail/${incidentWithUser.incident._id}")
                                 }
                             )
                         }
@@ -134,43 +136,38 @@ fun HomeScreen(navController: NavController? = null) {
 }
 
 @Composable
-fun TabButton(
+fun TabButtonWithUnderline(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor = if (isSelected) lightCreamColor else Color.Transparent
-    val textColor = if (isSelected) color2 else lightCreamColor
-    val borderColor = lightCreamColor
-    
-    Box(
-        modifier = Modifier
-            .clickable { onClick() }
-            .background(
-                color = backgroundColor,
-                shape = RoundedCornerShape(0.dp)
-            )
-            .border(
-                width = if (isSelected) 0.dp else 1.dp,
-                color = borderColor,
-                shape = RoundedCornerShape(0.dp)
-            )
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center
+    Column(
+        modifier = Modifier.clickable { onClick() }
     ) {
         Text(
             text = text,
-            color = textColor,
-            style = MaterialTheme.typography.bodyMedium.copy(
+            color = lightCreamColor,
+            style = MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-            )
+            ),
+            modifier = Modifier.padding(bottom = 8.dp)
         )
+        
+        // Subrayado solo cuando está seleccionado
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .width(70.dp)
+                    .height(2.dp)
+                    .background(lightCreamColor)
+            )
+        }
     }
 }
 
 @Composable
 fun IncidentCard(
-    incident: Incident,
+    incidentWithUser: IncidentWithUser,
     onClick: () -> Unit = {}
 ) {
     Card(
@@ -212,7 +209,7 @@ fun IncidentCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 
                 Text(
-                    text = "Nombre de Usuario", // Por ahora hardcodeado
+                    text = incidentWithUser.userName,
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Medium,
                         color = color2
@@ -224,7 +221,7 @@ fun IncidentCard(
             
             // Título del incidente
             Text(
-                text = incident.title,
+                text = incidentWithUser.incident.title,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
@@ -237,7 +234,7 @@ fun IncidentCard(
             
             // Descripción
             Text(
-                text = incident.description,
+                text = incidentWithUser.incident.description,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = Color.Black.copy(alpha = 0.7f)
                 ),
@@ -262,7 +259,7 @@ fun IncidentCard(
                     modifier = Modifier.height(32.dp)
                 ) {
                     Text(
-                        text = "Distrito", // Por ahora hardcodeado
+                        text = incidentWithUser.incident.district,
                         style = MaterialTheme.typography.bodySmall,
                         color = lightCreamColor
                     )
@@ -276,7 +273,7 @@ fun IncidentCard(
                     modifier = Modifier.height(32.dp)
                 ) {
                     Text(
-                        text = incident.incidentType,
+                        text = incidentWithUser.incident.incidentType,
                         style = MaterialTheme.typography.bodySmall,
                         color = color2
                     )

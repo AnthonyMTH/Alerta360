@@ -3,7 +3,10 @@ package com.unsa.alerta360.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unsa.alerta360.domain.model.Incident
+import com.unsa.alerta360.domain.model.IncidentWithUser
+import com.unsa.alerta360.domain.model.Result
 import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
+import com.unsa.alerta360.domain.usecase.user.GetUserDetailsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +15,7 @@ import javax.inject.Inject
 
 sealed class HomeUiState {
     object Loading : HomeUiState()
-    data class Success(val incidents: List<Incident>) : HomeUiState()
+    data class Success(val incidents: List<IncidentWithUser>) : HomeUiState()
     data class Error(val message: String) : HomeUiState()
 }
 
@@ -23,7 +26,8 @@ sealed class TabSelection {
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val getAllIncidentsUseCase: GetAllIncidentsUseCase
+    private val getAllIncidentsUseCase: GetAllIncidentsUseCase,
+    private val getUserDetailsUseCase: GetUserDetailsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -32,7 +36,7 @@ class HomeViewModel @Inject constructor(
     private val _selectedTab = MutableStateFlow<TabSelection>(TabSelection.Todos)
     val selectedTab: StateFlow<TabSelection> = _selectedTab
 
-    private val _allIncidents = MutableStateFlow<List<Incident>>(emptyList())
+    private val _allIncidents = MutableStateFlow<List<IncidentWithUser>>(emptyList())
 
     init {
         loadIncidents()
@@ -56,16 +60,34 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val incidents = getAllIncidentsUseCase()
-                _allIncidents.value = incidents
+                
+                // Cargar información del usuario para cada incidente
+                val incidentsWithUser = incidents.map { incident ->
+                    val userResult = getUserDetailsUseCase(incident.user_id)
+                    val userName = when (userResult) {
+                        is Result.Success -> {
+                            val userData = userResult.data
+                            if (userData != null) {
+                                "${userData.nombres} ${userData.apellidos}".trim()
+                            } else {
+                                "Usuario desconocido"
+                            }
+                        }
+                        is Result.Error -> "Usuario desconocido"
+                    }
+                    IncidentWithUser(incident, userName)
+                }
+                
+                _allIncidents.value = incidentsWithUser
                 
                 // Mostrar todos los incidentes cuando se carguen inicialmente
                 when (_selectedTab.value) {
                     is TabSelection.Todos -> {
-                        _uiState.value = HomeUiState.Success(incidents)
+                        _uiState.value = HomeUiState.Success(incidentsWithUser)
                     }
                     is TabSelection.MiHistorial -> {
                         // Por ahora mostrar todos, después filtrar por usuario
-                        _uiState.value = HomeUiState.Success(incidents)
+                        _uiState.value = HomeUiState.Success(incidentsWithUser)
                     }
                 }
             } catch (e: Exception) {
