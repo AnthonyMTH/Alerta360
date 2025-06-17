@@ -81,6 +81,8 @@ dependencies {
 
     // OkHttp logging interceptor
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    implementation("com.cloudinary:cloudinary-android:2.5.0")
+
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
