@@ -20,6 +20,7 @@ import com.unsa.alerta360.domain.repository.IncidentRepository
 import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
 import com.unsa.alerta360.domain.usecase.incident.CreateIncidentUseCase
 import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
+import com.unsa.alerta360.domain.usecase.incident.GetIncidentUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -114,5 +115,12 @@ object UseCaseModule {
     @ViewModelScoped
     fun provideGetAccountDetailsUseCase(accountRepository: AccountRepository): GetAccountDetailsUseCase {
         return GetAccountDetailsUseCase(accountRepository)
+    }
+    @Provides
+    @ViewModelScoped
+    fun provideGetIncidentUseCase(
+        incidentRepository: IncidentRepository
+    ): GetIncidentUseCase {
+        return GetIncidentUseCase(incidentRepository)
     }
 }

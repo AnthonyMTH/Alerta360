@@ -44,4 +44,20 @@ class IncidentRepositoryImpl @Inject constructor(
             throw e // Re-lanzar para que el ViewModel pueda capturar el error específico
         }
     }
+    override suspend fun getIncident(id: String): Incident? {
+        return try {
+            val response = api.getIncident(id)
+            if (response.isSuccessful) {
+                val incident = response.body()?.toDomain()
+                Log.d("IncidentRepository", "Incident loaded successfully: $incident")
+                incident
+            } else {
+                Log.e("IncidentRepository", "Error loading incident $id: ${response.code()} - ${response.message()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("IncidentRepository", "Exception loading incident $id: ${e.message}", e)
+            null
+        }
+    }
 }
