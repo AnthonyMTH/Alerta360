@@ -2,6 +2,7 @@ package com.unsa.alerta360.presentation.addIncident
 
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -10,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -61,19 +64,22 @@ fun AddIncidentScreen( navController: NavController) {
     val titulo by viewModel.titulo.collectAsState()
     val tipoIncidente by viewModel.tipoIncidente.collectAsState()
     val direccion by viewModel.direccion.collectAsState()
-    val departamento by viewModel.departamento.collectAsState()
-    val provincia by viewModel.provincia.collectAsState()
+
     val distrito by viewModel.distrito.collectAsState()
     val description by viewModel.description.collectAsState()
     val imageUri by viewModel.imageUri.collectAsState()
 
     val uiEvent by viewModel.uiEvent.collectAsState()
 
+    val context = LocalContext.current  // Obtener el contexto dentro del Composable
+
+
     LaunchedEffect(uiEvent) {
         if (uiEvent is AddIncidentEvent.NavigateBack) {
             navController.popBackStack()
             viewModel.clearEvent()
         }
+
     }
 
 
@@ -183,8 +189,6 @@ fun AddIncidentScreen( navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            DropdownSelector("Departamento", departamento, viewModel.departamentos, viewModel::onDepartamentoChange)
-            DropdownSelector("Provincia", provincia, viewModel.provincias, viewModel::onProvinciaChange)
             DropdownSelector("Distrito", distrito, viewModel.distritos, viewModel::onDistritoChange)
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -224,7 +228,7 @@ fun AddIncidentScreen( navController: NavController) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button (
-                onClick = { viewModel.guardar() },
+                onClick = { viewModel.guardar(context) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -233,6 +237,33 @@ fun AddIncidentScreen( navController: NavController) {
             ) {
                 Text("Guardar", color = color2)
             }
+
+            when (val event = uiEvent) {
+                is AddIncidentEvent.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+                is AddIncidentEvent.Success -> {
+                    Text(
+                        text = event.message,
+                        color = Color.Green,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                    Toast.makeText(context, (uiEvent as AddIncidentEvent.Success).message, Toast.LENGTH_SHORT).show()
+                }
+                is AddIncidentEvent.Error -> {
+                    Text(
+                        text = event.message,
+                        color = Color.Red,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+                else -> {
+                    // No hacer nada si el estado es NavigateBack o cualquier otro no manejado
+                }
+            }
+
         }
     }
 
