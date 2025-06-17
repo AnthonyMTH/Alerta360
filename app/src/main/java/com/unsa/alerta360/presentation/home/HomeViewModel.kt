@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.unsa.alerta360.domain.model.Incident
 import com.unsa.alerta360.domain.model.IncidentWithUser
 import com.unsa.alerta360.domain.model.Result
+import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
 import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
 import com.unsa.alerta360.domain.usecase.user.GetUserDetailsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,7 +28,7 @@ sealed class TabSelection {
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getAllIncidentsUseCase: GetAllIncidentsUseCase,
-    private val getUserDetailsUseCase: GetUserDetailsUseCase
+    private val getAccountDetailsUseCase: GetAccountDetailsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -63,12 +64,12 @@ class HomeViewModel @Inject constructor(
                 
                 // Cargar información del usuario para cada incidente
                 val incidentsWithUser = incidents.map { incident ->
-                    val userResult = getUserDetailsUseCase(incident.user_id)
+                    val userResult = getAccountDetailsUseCase(incident.user_id)
                     val userName = when (userResult) {
                         is Result.Success -> {
                             val userData = userResult.data
                             if (userData != null) {
-                                "${userData.nombres} ${userData.apellidos}".trim()
+                                "${userData.first_name} ${userData.last_name}".trim()
                             } else {
                                 "Usuario desconocido"
                             }

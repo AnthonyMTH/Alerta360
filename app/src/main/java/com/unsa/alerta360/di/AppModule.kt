@@ -8,6 +8,7 @@ import com.unsa.alerta360.domain.usecase.auth.GetCurrentUserUseCase
 import com.unsa.alerta360.domain.usecase.auth.LoginUserUseCase
 import com.unsa.alerta360.domain.usecase.auth.RegisterUserUseCase
 import com.unsa.alerta360.domain.usecase.user.SaveUserDetailsUseCase
+import com.unsa.alerta360.domain.usecase.user.GetUserDetailsUseCase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.unsa.alerta360.data.network.AccountApiService
@@ -16,6 +17,7 @@ import com.unsa.alerta360.data.repository.AccountRepositoryImpl
 import com.unsa.alerta360.data.repository.IncidentRepositoryImpl
 import com.unsa.alerta360.domain.repository.AccountRepository
 import com.unsa.alerta360.domain.repository.IncidentRepository
+import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
 import com.unsa.alerta360.domain.usecase.incident.CreateIncidentUseCase
 import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
 import dagger.Module
@@ -37,26 +39,21 @@ object RepositoryModule {
         return AuthRepositoryImpl(firebaseAuth)
     }
 
-    @Module
-    @InstallIn(SingletonComponent::class)
-    object RepositoryModule {
-
-        @Provides
-        @Singleton
-        fun provideAccountRepository(apiService: AccountApiService): AccountRepository {
-            return AccountRepositoryImpl(apiService)
-        }
-
+    @Provides
+    @Singleton
+    fun provideAccountRepository(apiService: AccountApiService): AccountRepository {
+        return AccountRepositoryImpl(apiService)
     }
 
     @Provides
     @Singleton
-    fun provideUserRepository(firestore: FirebaseFirestore): UserRepository {
-        return UserRepositoryImpl(
-            firestore,
-            accountApiService = TODO()
-        )
+    fun provideUserRepository(
+        firestore: FirebaseFirestore,
+        accountApiService: AccountApiService
+    ): UserRepository {
+        return UserRepositoryImpl(firestore, accountApiService)
     }
+    
     @Provides
     @Singleton
     fun provideIncidentRepository(api: IncidentApi): IncidentRepository {
@@ -97,6 +94,12 @@ object UseCaseModule {
 
     @Provides
     @ViewModelScoped
+    fun provideGetUserDetailsUseCase(userRepository: UserRepository): GetUserDetailsUseCase {
+        return GetUserDetailsUseCase(userRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
     fun provideCreateIncidentUseCase(incidentRepository: IncidentRepository): CreateIncidentUseCase {
         return CreateIncidentUseCase(incidentRepository)
     }
@@ -105,5 +108,11 @@ object UseCaseModule {
     @ViewModelScoped
     fun provideGetAllIncidentsUseCase(incidentRepository: IncidentRepository): GetAllIncidentsUseCase {
         return GetAllIncidentsUseCase(incidentRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideGetAccountDetailsUseCase(accountRepository: AccountRepository): GetAccountDetailsUseCase {
+        return GetAccountDetailsUseCase(accountRepository)
     }
 }
