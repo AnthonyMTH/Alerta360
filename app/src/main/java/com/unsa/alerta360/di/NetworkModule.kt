@@ -2,6 +2,7 @@ package com.unsa.alerta360.di
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.unsa.alerta360.data.network.AccountApiService
 import com.unsa.alerta360.data.network.IncidentApi
 import dagger.Module
 import dagger.Provides
@@ -16,7 +17,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object Network1Module {
+object NetworkModule {
 
     private const val BASE_URL = "https://backend-alerta360.onrender.com/api/v1/"
 
@@ -33,7 +34,7 @@ object Network1Module {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
-        
+
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
@@ -54,4 +55,10 @@ object Network1Module {
     @Singleton
     fun provideIncidentApi(retrofit: Retrofit): IncidentApi =
         retrofit.create(IncidentApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAccountApiService(retrofit: Retrofit): AccountApiService =
+        retrofit.create(AccountApiService::class.java)
+
 }
