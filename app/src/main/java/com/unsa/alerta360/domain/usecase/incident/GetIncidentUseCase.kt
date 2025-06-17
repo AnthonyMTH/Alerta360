@@ -4,8 +4,8 @@ import com.unsa.alerta360.domain.model.Incident
 import com.unsa.alerta360.domain.repository.IncidentRepository
 import javax.inject.Inject
 
-class GetAllIncidentsUseCase @Inject constructor(
+class GetIncidentUseCase @Inject constructor(
     private val repo: IncidentRepository
 ) {
-    suspend operator fun invoke(): List<Incident> = repo.getAllIncidents()
+    suspend operator fun invoke(id: String): Incident? = repo.getIncident(id)
 }

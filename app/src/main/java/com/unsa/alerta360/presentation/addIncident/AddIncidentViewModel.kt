@@ -102,7 +102,17 @@ class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase
 
 
         viewModelScope.launch {
-
+            val newIncident = Incident(
+                description = _description.value,
+                incidentType = _tipoIncidente.value,
+                ubication = _direccion.value,
+                district = _distrito.value,
+                geolocation = "-1233213, 123123", // Se calculará luego con FusedLocationProviderClient
+                evidence = listOf("https://elbuho.pe/wp-content/uploads/2024/05/Noticiero-17-de-mayo-2024.jpeg",
+                    "https://i.ytimg.com/vi/VCOTrE-1j-U/maxresdefault.jpg"), // datos mock
+                user_id = "682f18e1d21cf2679fa4fa81", // ID luego se integrará con usuario autenticado
+                title = _titulo.value
+            )
             try {
                 val evidenceList = mutableListOf<String>()
                 imageUri.value?.let { uri ->

@@ -1,61 +1,45 @@
 package com.unsa.alerta360.presentation.incident
 
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.mutableStateListOf
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.State
-import com.unsa.alerta360.data.local.Incident
+import androidx.lifecycle.viewModelScope
+import com.unsa.alerta360.domain.model.Account
+import com.unsa.alerta360.domain.model.Incident
+import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
+import com.unsa.alerta360.domain.usecase.incident.GetIncidentUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import com.unsa.alerta360.domain.model.Result
 
-class IncidentViewModel : ViewModel() {
+@HiltViewModel
+class IncidentViewModel @Inject constructor(
+    private val getIncidentUseCase: GetIncidentUseCase,
+    private val getAccountDetailsUseCase: GetAccountDetailsUseCase
+) : ViewModel() {
 
-    private val _incidents = mutableStateListOf<Incident>()
-    private var currentIndex = mutableStateOf(0)
-    val currentIncident: State<Incident?> = derivedStateOf {
-        if (_incidents.isNotEmpty()) _incidents[currentIndex.value] else null
-    }
+    private val _currentIncident = mutableStateOf<Incident?>(null)
+    val currentIncident: State<Incident?> = _currentIncident
 
-    init {
-        loadMockIncidents()
-    }
+    private val _accountData = mutableStateOf<Account?>(null)
+    val accountData: State<Account?> = _accountData
 
-    private fun loadMockIncidents() {
-        _incidents.addAll(
-            listOf(
-                Incident(
-                    title = "Robo a mano armada",
-                    username = "Juan Pérez",
-                    location = "Arequipa, Arequipa",
-                    address = "Av. Ejemplo 123",
-                    description = "Un incidente ocurrió donde se produjo un robo a mano armada.",
-                    district = "Cercado",
-                    type = "Robo"
-                ),
-                Incident(
-                    title = "Asalto en moto",
-                    username = "Ana Torres",
-                    location = "Lima, Lima",
-                    address = "Jirón Libertad 456",
-                    description = "Dos sujetos en moto interceptaron a un transeúnte.",
-                    district = "Miraflores",
-                    type = "Asalto"
-                ),
-                Incident(
-                    title = "Hurto en comercio",
-                    username = "Carlos Gómez",
-                    location = "Cusco, Cusco",
-                    address = "Calle Comercio 789",
-                    description = "Se reportó hurto dentro de una tienda local.",
-                    district = "Centro Histórico",
-                    type = "Hurto"
-                )
-            )
-        )
-    }
+    fun loadIncidentById(id: String) {
+        viewModelScope.launch {
+            val incident = getIncidentUseCase(id)
+            _currentIncident.value = incident
 
-    fun nextIncident() {
-        if (_incidents.isNotEmpty()) {
-            currentIndex.value = (currentIndex.value + 1) % _incidents.size
+            incident?.user_id?.let { userId ->
+                when (val result = getAccountDetailsUseCase(userId)) {
+                    is Result.Success -> _accountData.value = result.data
+                    is Result.Error -> {
+                        _accountData.value = null
+                        Log.e("IncidentViewModel", "Error al obtener la cuenta: ${result.message}", result.exception)
+                    }
+                }
+            }
         }
     }
 }

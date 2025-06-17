@@ -8,11 +8,19 @@ import com.unsa.alerta360.domain.usecase.auth.GetCurrentUserUseCase
 import com.unsa.alerta360.domain.usecase.auth.LoginUserUseCase
 import com.unsa.alerta360.domain.usecase.auth.RegisterUserUseCase
 import com.unsa.alerta360.domain.usecase.user.SaveUserDetailsUseCase
+import com.unsa.alerta360.domain.usecase.user.GetUserDetailsUseCase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.unsa.alerta360.data.network.AccountApiService
 import com.unsa.alerta360.data.network.IncidentApi
+import com.unsa.alerta360.data.repository.AccountRepositoryImpl
 import com.unsa.alerta360.data.repository.IncidentRepositoryImpl
+import com.unsa.alerta360.domain.repository.AccountRepository
 import com.unsa.alerta360.domain.repository.IncidentRepository
+import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
+import com.unsa.alerta360.domain.usecase.incident.CreateIncidentUseCase
+import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
+import com.unsa.alerta360.domain.usecase.incident.GetIncidentUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,9 +42,19 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideUserRepository(firestore: FirebaseFirestore): UserRepository {
-        return UserRepositoryImpl(firestore)
+    fun provideAccountRepository(apiService: AccountApiService): AccountRepository {
+        return AccountRepositoryImpl(apiService)
     }
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        firestore: FirebaseFirestore,
+        accountApiService: AccountApiService
+    ): UserRepository {
+        return UserRepositoryImpl(firestore, accountApiService)
+    }
+    
     @Provides
     @Singleton
     fun provideIncidentRepository(api: IncidentApi): IncidentRepository {
@@ -73,5 +91,36 @@ object UseCaseModule {
     @ViewModelScoped
     fun provideSaveUserDetailsUseCase(userRepository: UserRepository): SaveUserDetailsUseCase {
         return SaveUserDetailsUseCase(userRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideGetUserDetailsUseCase(userRepository: UserRepository): GetUserDetailsUseCase {
+        return GetUserDetailsUseCase(userRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideCreateIncidentUseCase(incidentRepository: IncidentRepository): CreateIncidentUseCase {
+        return CreateIncidentUseCase(incidentRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideGetAllIncidentsUseCase(incidentRepository: IncidentRepository): GetAllIncidentsUseCase {
+        return GetAllIncidentsUseCase(incidentRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideGetAccountDetailsUseCase(accountRepository: AccountRepository): GetAccountDetailsUseCase {
+        return GetAccountDetailsUseCase(accountRepository)
+    }
+    @Provides
+    @ViewModelScoped
+    fun provideGetIncidentUseCase(
+        incidentRepository: IncidentRepository
+    ): GetIncidentUseCase {
+        return GetIncidentUseCase(incidentRepository)
     }
 }

@@ -11,6 +11,7 @@ import com.unsa.alerta360.presentation.initial.InitialScreen
 import com.unsa.alerta360.presentation.login.LoginScreen
 import com.unsa.alerta360.presentation.register.RegisterScreen
 import com.unsa.alerta360.presentation.splash.SplashScreen
+import com.unsa.alerta360.presentation.incident.IncidentScreen
 
 object AppRoutes {
     const val SPLASH = "splash"
@@ -18,6 +19,7 @@ object AppRoutes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val HOME = "home"
+    const val INCIDENT_DETAIL = "incident_detail"
 }
 
 @Composable
@@ -81,7 +83,16 @@ fun NavigationWrapper(navHostController: NavHostController) {
                 })
         }
         composable(AppRoutes.HOME) {
-            MainScreen()
+            MainScreen(navController = navHostController)
+        }
+        composable("${AppRoutes.INCIDENT_DETAIL}/{incidentId}") { backStackEntry ->
+            val incidentId = backStackEntry.arguments?.getString("incidentId") ?: ""
+            IncidentScreen(
+                incidentId = incidentId,
+                onNavigateBack = {
+                    navHostController.popBackStack()
+                }
+            )
         }
     }
 }

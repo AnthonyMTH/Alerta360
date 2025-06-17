@@ -79,6 +79,8 @@ dependencies {
 // Gson converter (para manejar JSON automáticamente)
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
+    // OkHttp logging interceptor
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
     implementation("com.cloudinary:cloudinary-android:2.5.0")
 
 

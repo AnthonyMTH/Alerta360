@@ -1,19 +1,21 @@
 package com.unsa.alerta360.data.repository
 
+import com.unsa.alerta360.data.local.UserData
+import com.unsa.alerta360.data.network.AccountApiService
 import com.unsa.alerta360.domain.model.Result
 import com.unsa.alerta360.domain.repository.UserRepository
 import com.google.firebase.firestore.FirebaseFirestore
-import com.unsa.alerta360.data.local.UserData
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val accountApiService: AccountApiService
 ) : UserRepository {
 
+    // Guardado local en Firestore (igual que antes)
     override suspend fun saveUserDetails(userId: String, userData: UserData): Result<Unit> {
         return try {
-            // Aseguramos que el UID del UserData coincida, o lo asignamos si no lo tiene
             val dataToSave = if (userData.uid.isEmpty() || userData.uid != userId) {
                 userData.copy(uid = userId)
             } else {
@@ -26,6 +28,7 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
+    // Obtener datos desde Firestore
     override suspend fun getUserDetails(userId: String): Result<UserData?> {
         return try {
             val documentSnapshot = firestore.collection("usuarios").document(userId).get().await()
@@ -35,4 +38,6 @@ class UserRepositoryImpl @Inject constructor(
             Result.Error(e, "Error al obtener los detalles del usuario: ${e.message}")
         }
     }
+
+
 }
