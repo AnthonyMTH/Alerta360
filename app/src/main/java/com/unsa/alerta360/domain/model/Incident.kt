@@ -7,6 +7,7 @@ data class Incident(
     val ubication: String,
     val geolocation: String,
     val evidence: List<String>,
+    val district: String,
     val user_id: String,
     val title: String,
     val createdAt: String? = null,

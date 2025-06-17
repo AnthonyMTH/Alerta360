@@ -9,6 +9,7 @@ data class IncidentDto(
     val evidence: List<String>,
     val user_id: String,
     val title: String,
+    val district: String,
     val createdAt: String? = null,
     val updatedAt: String? = null,
     val __v: Int? = null

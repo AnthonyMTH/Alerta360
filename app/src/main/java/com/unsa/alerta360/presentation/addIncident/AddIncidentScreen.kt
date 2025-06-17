@@ -64,8 +64,7 @@ fun AddIncidentScreen( navController: NavController) {
     val titulo by viewModel.titulo.collectAsState()
     val tipoIncidente by viewModel.tipoIncidente.collectAsState()
     val direccion by viewModel.direccion.collectAsState()
-    val departamento by viewModel.departamento.collectAsState()
-    val provincia by viewModel.provincia.collectAsState()
+
     val distrito by viewModel.distrito.collectAsState()
     val description by viewModel.description.collectAsState()
     val imageUri by viewModel.imageUri.collectAsState()
@@ -190,8 +189,6 @@ fun AddIncidentScreen( navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            DropdownSelector("Departamento", departamento, viewModel.departamentos, viewModel::onDepartamentoChange)
-            DropdownSelector("Provincia", provincia, viewModel.provincias, viewModel::onProvinciaChange)
             DropdownSelector("Distrito", distrito, viewModel.distritos, viewModel::onDistritoChange)
 
             Spacer(modifier = Modifier.height(16.dp))

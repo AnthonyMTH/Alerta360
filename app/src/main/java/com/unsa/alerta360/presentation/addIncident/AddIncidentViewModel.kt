@@ -38,11 +38,6 @@ class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase
     private val _direccion = MutableStateFlow("")
     val direccion: StateFlow<String> = _direccion
 
-    private val _departamento = MutableStateFlow("")
-    val departamento: StateFlow<String> = _departamento
-
-    private val _provincia = MutableStateFlow("")
-    val provincia: StateFlow<String> = _provincia
 
     private val _distrito = MutableStateFlow("")
     val distrito: StateFlow<String> = _distrito
@@ -57,15 +52,36 @@ class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase
     val uiEvent: StateFlow<AddIncidentEvent?> = _uiEvent
 
     val tiposIncidente = listOf("Accidente", "Robo", "Otro")
-    val departamentos = listOf("Lima", "Cusco", "Arequipa")
-    val provincias = listOf("Lima", "Urubamba", "Caylloma")
-    val distritos = listOf("Miraflores", "San Isidro", "Surco")
+
+    val distritos = listOf(
+        "Alto Selva Alegre",
+        "Cayma",
+        "Cercado",
+        "Cerro Colorado",
+        "Characato",
+        "Chiguata",
+        "Jacobo Hunter",
+        "José Luis Bustamante y Rivero",
+        "Mariano Melgar",
+        "Miraflores",
+        "Mollebaya",
+        "Paucarpata",
+        "Polobaya",
+        "Quequeña",
+        "Sabandía",
+        "Sachaca",
+        "Socabaya",
+        "Tiabaya",
+        "Uchumayo",
+        "Yanahuara",
+        "Yarabamba",
+        "Yura"
+    )
 
     fun onTituloChange(value: String) { _titulo.value = value }
     fun onTipoIncidenteChange(value: String) { _tipoIncidente.value = value }
     fun onDireccionChange(value: String) { _direccion.value = value }
-    fun onDepartamentoChange(value: String) { _departamento.value = value }
-    fun onProvinciaChange(value: String) { _provincia.value = value }
+
     fun onDistritoChange(value: String) { _distrito.value = value }
     fun onFileSelected(value: Uri) { _imageUri.value = value }
     fun onDescriptionChange(value: String) { _description.value = value }
@@ -103,10 +119,11 @@ class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase
                     description = _description.value,
                     incidentType = _tipoIncidente.value,
                     ubication = _direccion.value,
-                    geolocation = "-1233213, 123123", // Dummy, reemplaza luego
+                    geolocation = "-1233213, 123123",
                     evidence = evidenceList,
-                    user_id = "682f18e1d21cf2679fa4fa81", // Dummy, reemplaza luego
-                    title = _titulo.value
+                    user_id = "682f18e1d21cf2679fa4fa81",
+                    title = _titulo.value,
+                    district = _distrito.value
                 )
 
                 val result = createIncidentUseCase(newIncident)
