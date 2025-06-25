@@ -9,7 +9,7 @@ import com.unsa.alerta360.domain.repository.IncidentRepository
 import javax.inject.Inject
 
 class IncidentRepositoryImpl @Inject constructor(
-    private val api: IncidentApi
+        private val api: IncidentApi
 ) : IncidentRepository {
 
     override suspend fun createIncident(incident: Incident): Incident? {
