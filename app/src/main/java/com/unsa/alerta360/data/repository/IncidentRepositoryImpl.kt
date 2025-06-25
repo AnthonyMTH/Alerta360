@@ -25,7 +25,7 @@ class IncidentRepositoryImpl @Inject constructor(
     private val api: IncidentApi,
     private val dao: IncidentDao,
     private val prefs: DataStore<Preferences>,      // para el ETag
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher // define tu dispatcher
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : IncidentRepository {
 
 
