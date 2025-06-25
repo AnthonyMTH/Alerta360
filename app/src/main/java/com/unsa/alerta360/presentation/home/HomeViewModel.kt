@@ -2,11 +2,13 @@ package com.unsa.alerta360.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.unsa.alerta360.data.repository.Resource
 import com.unsa.alerta360.domain.model.Incident
 import com.unsa.alerta360.domain.model.IncidentWithUser
 import com.unsa.alerta360.domain.model.Result
 import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
 import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
+import com.unsa.alerta360.domain.usecase.incident.ObserveAllIncidentsUseCase
 import com.unsa.alerta360.domain.usecase.user.GetUserDetailsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +29,7 @@ sealed class TabSelection {
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val getAllIncidentsUseCase: GetAllIncidentsUseCase,
+    private val observeAllIncidentsUseCase: ObserveAllIncidentsUseCase,
     private val getAccountDetailsUseCase: GetAccountDetailsUseCase
 ) : ViewModel() {
 
@@ -40,73 +42,79 @@ class HomeViewModel @Inject constructor(
     private val _allIncidents = MutableStateFlow<List<IncidentWithUser>>(emptyList())
 
     init {
-        loadIncidents()
+        observeIncidents()
+    }
+
+    private fun observeIncidents() {
+        viewModelScope.launch {
+            observeAllIncidentsUseCase().collect { resource ->
+                when (resource) {
+                    is Resource.Loading -> {
+                        _uiState.value = HomeUiState.Loading
+                    }
+
+                    is Resource.Success -> {
+                        val enriched = resource.data.orEmpty().map { incident ->
+                            val userResult = getAccountDetailsUseCase(incident.user_id)
+                            val userName = when (userResult) {
+                                is Result.Success -> {
+                                    val user = userResult.data
+                                    if (user != null) "${user.first_name} ${user.last_name}".trim()
+                                    else "Usuario desconocido"
+                                }
+
+                                is Result.Error -> "Usuario desconocido"
+                            }
+                            IncidentWithUser(incident, userName)
+                        }
+
+                        _allIncidents.value = enriched
+                        updateUiByTab()
+                    }
+
+                    is Resource.Error -> {
+                        val enriched = resource.data.orEmpty().map { incident ->
+                            val userResult = getAccountDetailsUseCase(incident.user_id)
+                            val userName = when (userResult) {
+                                is Result.Success -> {
+                                    val user = userResult.data
+                                    if (user != null) "${user.first_name} ${user.last_name}".trim()
+                                    else "Usuario desconocido"
+                                }
+
+                                is Result.Error -> "Usuario desconocido"
+                            }
+                            IncidentWithUser(incident, userName)
+                        }
+
+                        _allIncidents.value = enriched
+                        _uiState.value = HomeUiState.Error(resource.message ?: "Error desconocido")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateUiByTab() {
+        when (_selectedTab.value) {
+            is TabSelection.Todos -> {
+                _uiState.value = HomeUiState.Success(_allIncidents.value)
+            }
+
+            is TabSelection.MiHistorial -> {
+                // Implementa lógica de filtrado por usuario si deseas
+                _uiState.value = HomeUiState.Success(_allIncidents.value)
+            }
+        }
     }
 
     fun selectTab(tab: TabSelection) {
         _selectedTab.value = tab
-        when (tab) {
-            is TabSelection.Todos -> {
-                _uiState.value = HomeUiState.Success(_allIncidents.value)
-            }
-            is TabSelection.MiHistorial -> {
-                // Por ahora mostrar todos los incidentes, después se filtrará por usuario
-                _uiState.value = HomeUiState.Success(_allIncidents.value)
-            }
-        }
-    }
-
-    private fun loadIncidents() {
-        _uiState.value = HomeUiState.Loading
-        viewModelScope.launch {
-            try {
-                val incidents = getAllIncidentsUseCase()
-                
-                // Cargar información del usuario para cada incidente
-                val incidentsWithUser = incidents.map { incident ->
-                    val userResult = getAccountDetailsUseCase(incident.user_id)
-                    val userName = when (userResult) {
-                        is Result.Success -> {
-                            val userData = userResult.data
-                            if (userData != null) {
-                                "${userData.first_name} ${userData.last_name}".trim()
-                            } else {
-                                "Usuario desconocido"
-                            }
-                        }
-                        is Result.Error -> "Usuario desconocido"
-                    }
-                    IncidentWithUser(incident, userName)
-                }
-                
-                _allIncidents.value = incidentsWithUser
-                
-                // Mostrar todos los incidentes cuando se carguen inicialmente
-                when (_selectedTab.value) {
-                    is TabSelection.Todos -> {
-                        _uiState.value = HomeUiState.Success(incidentsWithUser)
-                    }
-                    is TabSelection.MiHistorial -> {
-                        // Por ahora mostrar todos, después filtrar por usuario
-                        _uiState.value = HomeUiState.Success(incidentsWithUser)
-                    }
-                }
-            } catch (e: Exception) {
-                val errorMessage = when {
-                    e.message?.contains("JsonReader") == true -> 
-                        "Error de conexión: El servidor no está respondiendo correctamente"
-                    e.message?.contains("timeout") == true -> 
-                        "Tiempo de espera agotado: Verifica tu conexión a internet"
-                    e.message?.contains("Unable to resolve host") == true -> 
-                        "Sin conexión a internet: Verifica tu conexión de red"
-                    else -> "Error al cargar incidentes: ${e.message}"
-                }
-                _uiState.value = HomeUiState.Error(errorMessage)
-            }
-        }
+        updateUiByTab()
     }
 
     fun refreshIncidents() {
-        loadIncidents()
+        // Ya no necesitas forzar un refresh si estás usando NetworkBoundResource;
+        // si deseas forzar un nuevo fetch, deberías hacer que `shouldFetch()` devuelva true (puedes agregar lógica extra).
     }
 }

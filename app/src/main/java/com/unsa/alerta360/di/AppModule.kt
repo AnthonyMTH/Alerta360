@@ -11,6 +11,7 @@ import com.unsa.alerta360.domain.usecase.user.SaveUserDetailsUseCase
 import com.unsa.alerta360.domain.usecase.user.GetUserDetailsUseCase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.unsa.alerta360.data.local.dao.IncidentDao
 import com.unsa.alerta360.data.network.AccountApiService
 import com.unsa.alerta360.data.network.IncidentApi
 import com.unsa.alerta360.data.repository.AccountRepositoryImpl
@@ -54,11 +55,14 @@ object RepositoryModule {
     ): UserRepository {
         return UserRepositoryImpl(firestore, accountApiService)
     }
-    
+
     @Provides
     @Singleton
-    fun provideIncidentRepository(api: IncidentApi): IncidentRepository {
-        return IncidentRepositoryImpl(api)
+    fun provideIncidentRepository(
+        api: IncidentApi,
+        dao: IncidentDao
+    ): IncidentRepository {
+        return IncidentRepositoryImpl(api, dao)
     }
 }
 
