@@ -4,22 +4,25 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.unsa.alerta360.data.local.entity.Incident
+import com.unsa.alerta360.data.local.entity.IncidentEntity
 import kotlinx.coroutines.flow.Flow
 
 
-// Rehacer en casa
+
 @Dao
 interface IncidentDao {
-    @Query("SELECT * FROM incidents ORDER BY updated_at DESC")
-    fun observeAll(): Flow<List<Incident>>
+    @Query("SELECT * FROM incident")
+    fun observeAll(): Flow<List<IncidentEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)   // idempotente
-    suspend fun insertAll(items: List<Incident>)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(incidents: List<IncidentEntity>)
 
-    @Query("SELECT etag FROM sync_state WHERE key = 'INCIDENT'")
-    suspend fun lastEtag(): String?
+    @Query("DELETE FROM incident")
+    suspend fun clearAll()
 
-    @Query("INSERT OR REPLACE INTO sync_state(key, etag) VALUES('INCIDENTS', :etag)")
-    suspend fun saveEtag(etag: String)
+    @Query("SELECT * FROM incident")
+    suspend fun getAllSync(): List<IncidentEntity>
+
+    @Query("SELECT * FROM incident WHERE _id = :id")
+    suspend fun getById(id: String): IncidentEntity?
 }
