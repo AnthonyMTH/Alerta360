@@ -52,7 +52,6 @@ class IncidentRepositoryImpl @Inject constructor(
 
     override fun observeIncidents(): Flow<List<Incident>> =
         dao.observeAll()
-            // 1️⃣ Antes de emitir, intento sincronizar pero envuelvo en try/catch
             .onStart {
                 try {
                     fetchAndCacheIncidents()
@@ -60,11 +59,9 @@ class IncidentRepositoryImpl @Inject constructor(
                     Log.e("IncidentRepo", "No pude sincronizar con remoto, usar local", e)
                 }
             }
-            // 2️⃣ Transformo la entidad de Room a mi modelo de dominio
             .map { list -> list.map { it.toDomain() } }
 
     override suspend fun getAllIncidents(): List<Incident> = withContext(ioDispatcher) {
-    // Para llamadas one-shot también refrescamos antes de leer
         fetchAndCacheIncidents()
         dao.getAllSync().map { it.toDomain() }
     }
@@ -88,7 +85,6 @@ class IncidentRepositoryImpl @Inject constructor(
     }
 
 
-    // 2️⃣ Lógica compartida de “remote-first”: ETag, API, Room y DataStore
     private suspend fun fetchAndCacheIncidents() = withContext(ioDispatcher) {
         // tu lógica exacta de ETag y API
         val oldEtag = prefs.data.first()[ETAG_KEY]
@@ -102,6 +98,5 @@ class IncidentRepositoryImpl @Inject constructor(
                 prefs.edit { it[ETAG_KEY] = newEtag }
             }
         }
-        // si hay 304 o error de negocio, NO TOCO la base
     }
 }
