@@ -15,12 +15,16 @@ import com.unsa.alerta360.data.network.AccountApiService
 import com.unsa.alerta360.data.network.IncidentApi
 import com.unsa.alerta360.data.repository.AccountRepositoryImpl
 import com.unsa.alerta360.data.repository.IncidentRepositoryImpl
+import com.unsa.alerta360.data.repository.HybridIncidentRepositoryImpl
 import com.unsa.alerta360.domain.repository.AccountRepository
 import com.unsa.alerta360.domain.repository.IncidentRepository
 import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
 import com.unsa.alerta360.domain.usecase.incident.CreateIncidentUseCase
 import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
 import com.unsa.alerta360.domain.usecase.incident.GetIncidentUseCase
+import com.unsa.alerta360.data.local.dao.IncidentDao
+import com.unsa.alerta360.data.sync.SyncManager
+import com.unsa.alerta360.data.network.util.NetworkUtil
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -57,8 +61,23 @@ object RepositoryModule {
     
     @Provides
     @Singleton
-    fun provideIncidentRepository(api: IncidentApi): IncidentRepository {
-        return IncidentRepositoryImpl(api)
+    fun provideIncidentRepository(
+        incidentDao: IncidentDao,
+        api: IncidentApi,
+        syncManager: SyncManager,
+        networkUtil: NetworkUtil
+    ): IncidentRepository {
+        return HybridIncidentRepositoryImpl(incidentDao, api, syncManager, networkUtil)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideSyncManager(
+        incidentDao: IncidentDao,
+        incidentApi: IncidentApi,
+        networkUtil: NetworkUtil
+    ): SyncManager {
+        return SyncManager(incidentDao, incidentApi, networkUtil)
     }
 }
 

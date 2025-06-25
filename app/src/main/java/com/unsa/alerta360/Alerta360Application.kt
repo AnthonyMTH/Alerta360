@@ -1,16 +1,31 @@
 package com.unsa.alerta360
 
 import android.app.Application
+import com.unsa.alerta360.data.sync.SyncScheduler
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import javax.inject.Inject
 
 @HiltAndroidApp
 class Alerta360Application : Application() {
-    // Puedes añadir lógica de inicialización a nivel de aplicación aquí si es necesario en el futuro,
-    // por ejemplo, para librerías de logging, analytics, etc.
-    // Por ahora, para Hilt, solo se necesita la clase y la anotación.
+    
+    @Inject
+    lateinit var syncScheduler: SyncScheduler
+    
+    // Scope a nivel de aplicación
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun onCreate() {
         super.onCreate()
-        // Ejemplo: Timber.plant(Timber.DebugTree()) si usaras Timber para logging
+        
+        // Configurar la sincronización automática
+        setupSyncConfiguration()
+    }
+    
+    private fun setupSyncConfiguration() {
+        // Configurar sincronización periódica cada 6 horas
+        syncScheduler.startPeriodicSync(intervalHours = 6)
     }
 }

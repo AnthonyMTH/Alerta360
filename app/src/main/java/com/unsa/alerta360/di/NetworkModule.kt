@@ -4,9 +4,12 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.unsa.alerta360.data.network.AccountApiService
 import com.unsa.alerta360.data.network.IncidentApi
+import com.unsa.alerta360.data.network.util.NetworkUtil
+import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -60,5 +63,10 @@ object NetworkModule {
     @Singleton
     fun provideAccountApiService(retrofit: Retrofit): AccountApiService =
         retrofit.create(AccountApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNetworkUtil(@ApplicationContext context: Context): NetworkUtil =
+        NetworkUtil(context)
 
 }
