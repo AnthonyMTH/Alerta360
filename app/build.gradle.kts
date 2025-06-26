@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.room.common.jvm)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -82,7 +83,16 @@ dependencies {
     // OkHttp logging interceptor
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
     implementation("com.cloudinary:cloudinary-android:2.5.0")
-
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    /* --- Kotlinx Serialization (ya añadido vía plugin) --- */
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

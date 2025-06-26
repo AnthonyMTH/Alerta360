@@ -2,15 +2,12 @@ package com.unsa.alerta360.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unsa.alerta360.domain.model.Incident
 import com.unsa.alerta360.domain.model.IncidentWithUser
 import com.unsa.alerta360.domain.model.Result
 import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
 import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
-import com.unsa.alerta360.domain.usecase.user.GetUserDetailsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,81 +29,62 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
-    val uiState: StateFlow<HomeUiState> = _uiState
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private val _selectedTab = MutableStateFlow<TabSelection>(TabSelection.Todos)
-    val selectedTab: StateFlow<TabSelection> = _selectedTab
+    val selectedTab: StateFlow<TabSelection> = _selectedTab.asStateFlow()
 
     private val _allIncidents = MutableStateFlow<List<IncidentWithUser>>(emptyList())
 
     init {
-        loadIncidents()
+        observeIncidents()
     }
 
     fun selectTab(tab: TabSelection) {
         _selectedTab.value = tab
-        when (tab) {
-            is TabSelection.Todos -> {
-                _uiState.value = HomeUiState.Success(_allIncidents.value)
-            }
-            is TabSelection.MiHistorial -> {
-                // Por ahora mostrar todos los incidentes, después se filtrará por usuario
-                _uiState.value = HomeUiState.Success(_allIncidents.value)
-            }
-        }
-    }
-
-    private fun loadIncidents() {
-        _uiState.value = HomeUiState.Loading
-        viewModelScope.launch {
-            try {
-                val incidents = getAllIncidentsUseCase()
-                
-                // Cargar información del usuario para cada incidente
-                val incidentsWithUser = incidents.map { incident ->
-                    val userResult = getAccountDetailsUseCase(incident.user_id)
-                    val userName = when (userResult) {
-                        is Result.Success -> {
-                            val userData = userResult.data
-                            if (userData != null) {
-                                "${userData.first_name} ${userData.last_name}".trim()
-                            } else {
-                                "Usuario desconocido"
-                            }
-                        }
-                        is Result.Error -> "Usuario desconocido"
-                    }
-                    IncidentWithUser(incident, userName)
-                }
-                
-                _allIncidents.value = incidentsWithUser
-                
-                // Mostrar todos los incidentes cuando se carguen inicialmente
-                when (_selectedTab.value) {
-                    is TabSelection.Todos -> {
-                        _uiState.value = HomeUiState.Success(incidentsWithUser)
-                    }
-                    is TabSelection.MiHistorial -> {
-                        // Por ahora mostrar todos, después filtrar por usuario
-                        _uiState.value = HomeUiState.Success(incidentsWithUser)
-                    }
-                }
-            } catch (e: Exception) {
-                val errorMessage = when {
-                    e.message?.contains("JsonReader") == true -> 
-                        "Error de conexión: El servidor no está respondiendo correctamente"
-                    e.message?.contains("timeout") == true -> 
-                        "Tiempo de espera agotado: Verifica tu conexión a internet"
-                    e.message?.contains("Unable to resolve host") == true -> 
-                        "Sin conexión a internet: Verifica tu conexión de red"
-                    else -> "Error al cargar incidentes: ${e.message}"
-                }
-                _uiState.value = HomeUiState.Error(errorMessage)
-            }
-        }
+        applyFilter()
     }
 
     fun refreshIncidents() {
-        loadIncidents()
+        observeIncidents() // esto re-suscribe y dispara de nuevo el fetch (onStart)
+    }
+
+    private fun observeIncidents() {
+        viewModelScope.launch {
+            getAllIncidentsUseCase()
+                .onStart { _uiState.value = HomeUiState.Loading }
+                .catch { e ->
+                    _uiState.value = HomeUiState.Error(e.localizedMessage ?: "Error desconocido")
+                }
+                .collect { incidents ->
+                    val withUser = incidents.map { incident ->
+                        val userResult = getAccountDetailsUseCase(incident.user_id)
+                        val name = when (userResult) {
+                            is Result.Success ->
+                                userResult.data
+                                    ?.let { "${it.first_name} ${it.last_name}".trim() }
+                                    .takeUnless { it.isNullOrBlank() }
+                                    ?: "Usuario desconocido"
+                            is Result.Error -> "Usuario desconocido"
+                        }
+                        IncidentWithUser(incident, name)
+                    }
+
+
+                    _allIncidents.value = withUser
+
+                    // Emite el estado filtrado según la pestaña actual
+                    applyFilter()
+                }
+        }
+    }
+
+    private fun applyFilter() {
+        val lista = when (_selectedTab.value) {
+            is TabSelection.MiHistorial ->
+                _allIncidents.value.filter { /* it.incident.user_id == miId */ true }
+            TabSelection.Todos -> _allIncidents.value
+        }
+        _uiState.value = HomeUiState.Success(lista)
     }
 }

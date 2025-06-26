@@ -17,6 +17,7 @@ navigationCompose = "2.7.7"
 kspVersion = "2.0.0-1.0.23"
 hiltVersion = "2.51.1"
 androidxHiltNavigationCompose = "1.2.0"
+roomCommonJvm = "2.7.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -45,6 +46,7 @@ firebase-auth = {module = "com.google.firebase:firebase-auth-ktx"}
 firebase-firestore = {module = "com.google.firebase:firebase-firestore"}
 
 androidx-navigation-compose = {module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose"}
+androidx-room-common-jvm = { group = "androidx.room", name = "room-common-jvm", version.ref = "roomCommonJvm" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
