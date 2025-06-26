@@ -1,4 +1,11 @@
 x# Alerta360
+## Integrantes
+- Carrillo Daza, Barbara Rubi
+- Diaz Portilla, Carlo Rodrigo
+- Mamani Cañari, Gabriel Antony
+- Ticona Hareth, Anthony Joaquin
+
+
 
 # Trabajo en clase 26/06/2025
 
