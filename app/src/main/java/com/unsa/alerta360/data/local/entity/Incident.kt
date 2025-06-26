@@ -1,16 +1,13 @@
 package com.unsa.alerta360.data.local.entity
 import androidx.room.*
 import com.unsa.alerta360.data.local.room.Converters
-import kotlinx.serialization.encodeToString
-import kotlinx.datetime.Instant
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
+import java.util.UUID
 
 
 @Entity(tableName = "incident")
 @TypeConverters(Converters::class)
 data class IncidentEntity(
-    @PrimaryKey @ColumnInfo(name = "_id") val id: String,
+    @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val description: String,
     val incidentType: String,
     val ubication: String,
@@ -21,5 +18,6 @@ data class IncidentEntity(
     val evidence: List<String>,
     val createdAt: String?,
     val updatedAt: String?,
-    @ColumnInfo(name = "__v") val version: Int
+    @ColumnInfo(name = "__v") val version: Int?,
+    val synced: Boolean = false
 )
