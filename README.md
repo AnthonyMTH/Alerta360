@@ -9,13 +9,13 @@ x# Alerta360
 
 # Trabajo en clase 26/06/2025
 
-## 1. Creación de entidad y DAO
+## 1. Creación de entidad y DAO (Carrillo Daza, Barbara Rubi)
 
 Para representar cada incidente en la base de datos local:
 
 1. **Definición de la entidad**  
    - Se creó una clase de dominio `Incident` anotada con `@Entity`.  
-   - Incluye propiedades como `id`, `title`, `description`, `incidentType`, `ubication`, `geolocation`, `evidences` (lista), `district`, `userId`, `createdAt`, `updatedAt` y `version`.
+   - Incluye propiedades como `id`, `title`, `description`, `incidentType`, `ubication`, `geolocation`, `evidences` (lista), `district`, `userId`, `createdAt`, `updatedAt`, `version` y `synced` para identificar el estado del registro.
 2. **Convertidores de tipos complejos**  
    - Dado que Room sólo sabe manejar tipos primitivos, se implementaron convertidores (`TypeConverter`) para transformar listas de cadenas a JSON y fechas (por ejemplo `Instant`) a `Long`.
 3. **Interfaz DAO**  
@@ -26,7 +26,7 @@ Para representar cada incidente en la base de datos local:
 
 ---
 
-## 2. Guardar en local los incidentes
+## 2. Guardar en local los incidentes (Diaz Portilla, Carlo Rodrigo)
 
 La persistencia local se organizó en dos capas:
 
@@ -41,7 +41,7 @@ De esta manera, cualquier cambio en la base de datos (inserción o actualizació
 
 ---
 
-## 3. Sincronización con WorkManager
+## 3. Sincronización con WorkManager (Mamani Cañari, Gabriel Antony)
 
 Para mantener los datos actualizados sin intervención del usuario:
 
@@ -59,7 +59,7 @@ Para mantener los datos actualizados sin intervención del usuario:
 
 ---
 
-## 4. Conexión con UI e instalación de Room
+## 4. Conexión con UI e instalación de Room (Ticona Hareth, Anthony Joaquin)
 
 Para exponer los datos en pantalla usando Jetpack Compose y MVVM:
 
@@ -73,5 +73,9 @@ Para exponer los datos en pantalla usando Jetpack Compose y MVVM:
    - La pantalla principal suscribe el flujo con `collectAsState()` y muestra los incidentes en un `LazyColumn`.  
    - Cada elemento renderiza título, descripción y otros campos relevantes de forma declarativa.
 
+## 5. Pregunta (Todos)
+
+**¿Cómo se podría sincronizar cuando un dato se modificó en el backend? Por ejemplo, tenemos una app para compra de pasajes de bus, el usuario selecciona un asiento y mientras llena algunos datos, otro usuario compro el asiento?**
+A través de la verificación de disponibilidad en tiempo real justo antes de confirmar la transacción. Cada recurso (por ejemplo, asiento) tendría asignado un identificador de versión o timestamp que se envía al cliente cuando este selecciona el asiento. Al intentar reservarlo, el cliente incluye esa versión en su petición, entonces, el servidor compara la versión recibida con la actual; si coinciden, se confirma la reserva; si no, se rechaza y se informa al usuario que el asiento ya no está disponible.
 
 ---
