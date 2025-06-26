@@ -88,8 +88,8 @@ object RepositoryModule {
     
     @Provides
     @Singleton
-    fun provideIncidentRepository(api: IncidentApi, dao: IncidentDao, prefs: DataStore<Preferences>, @IoDispatcher ioDispatcher: CoroutineDispatcher): IncidentRepository {
-        return IncidentRepositoryImpl(api, dao, prefs, ioDispatcher)
+    fun provideIncidentRepository(api: IncidentApi, dao: IncidentDao, prefs: DataStore<Preferences>, @IoDispatcher ioDispatcher: CoroutineDispatcher, @ApplicationContext context: Context): IncidentRepository {
+        return IncidentRepositoryImpl(api, dao, prefs, ioDispatcher, context)
     }
 }
 

@@ -23,6 +23,12 @@ interface IncidentDao {
     @Query("SELECT * FROM incident")
     suspend fun getAllSync(): List<IncidentEntity>
 
-    @Query("SELECT * FROM incident WHERE _id = :id")
+    @Query("SELECT * FROM incident WHERE id = :id")
     suspend fun getById(id: String): IncidentEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(entity: IncidentEntity)
+
+    @Query("SELECT * FROM incident WHERE synced = 0")
+    suspend fun getPending(): List<IncidentEntity>
 }
