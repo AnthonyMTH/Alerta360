@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.ktx.app
 import com.unsa.alerta360.presentation.navigation.NavigationWrapper
 import com.unsa.alerta360.ui.theme.Alerta360Theme
 import dagger.hilt.android.AndroidEntryPoint

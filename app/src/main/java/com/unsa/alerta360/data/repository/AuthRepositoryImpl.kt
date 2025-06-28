@@ -5,12 +5,15 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseUser
+import com.unsa.alerta360.data.model.UserDto
+import com.unsa.alerta360.data.network.UserApiService
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject // Si usas Hilt
 import com.unsa.alerta360.domain.model.Result
 
 class AuthRepositoryImpl @Inject constructor( // Inyecta FirebaseAuth (Hilt ejemplo)
-    private val firebaseAuth: FirebaseAuth
+    private val firebaseAuth: FirebaseAuth,
+    private val userApiService: UserApiService
 ) : AuthRepository {
 
     override suspend fun loginUser(email: String, password: String): Result<FirebaseUser> {
@@ -45,5 +48,43 @@ class AuthRepositoryImpl @Inject constructor( // Inyecta FirebaseAuth (Hilt ejem
 
     override suspend fun logoutUser() {
         firebaseAuth.signOut()
+    }
+
+    override suspend fun saveUserDetails(uid: String, userData: UserDto): Result<UserDto> {
+        return try {
+            val response = userApiService.createUser(userData)
+            if (response.isSuccessful) {
+                response.body()?.let { user ->
+                    Result.Success(user)
+                } ?: Result.Error(Exception("Respuesta vacía del servidor"), "Error al procesar respuesta del servidor")
+            } else {
+                val errorMessage = response.errorBody()?.string() ?: "Error desconocido"
+                Result.Error(
+                    Exception("Error HTTP ${response.code()}"),
+                    "Error al guardar usuario: $errorMessage"
+                )
+            }
+        } catch (e: Exception) {
+            Result.Error(e, "Error de conexión al guardar usuario: ${e.message}")
+        }
+    }
+
+    override suspend fun getUserDetails(uid: String): Result<UserDto> {
+        return try {
+            val response = userApiService.getUserById(uid)
+            if (response.isSuccessful) {
+                response.body()?.let { user ->
+                    Result.Success(user)
+                } ?: Result.Error(Exception("Usuario no encontrado"), "Usuario no encontrado")
+            } else {
+                val errorMessage = response.errorBody()?.string() ?: "Error desconocido"
+                Result.Error(
+                    Exception("Error HTTP ${response.code()}"),
+                    "Error al obtener usuario: $errorMessage"
+                )
+            }
+        } catch (e: Exception) {
+            Result.Error(e, "Error de conexión al obtener usuario: ${e.message}")
+        }
     }
 }

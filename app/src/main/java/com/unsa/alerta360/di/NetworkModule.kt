@@ -1,9 +1,12 @@
 package com.unsa.alerta360.di
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.unsa.alerta360.data.network.AccountApiService
+import com.unsa.alerta360.data.network.AuthInterceptor
 import com.unsa.alerta360.data.network.IncidentApi
+import com.unsa.alerta360.data.network.UserApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,12 +33,19 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideAuthInterceptor(firebaseAuth: FirebaseAuth): AuthInterceptor {
+        return AuthInterceptor(firebaseAuth)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
 
         return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
@@ -60,5 +70,10 @@ object NetworkModule {
     @Singleton
     fun provideAccountApiService(retrofit: Retrofit): AccountApiService =
         retrofit.create(AccountApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserApiService(retrofit: Retrofit): UserApiService =
+        retrofit.create(UserApiService::class.java)
 
 }

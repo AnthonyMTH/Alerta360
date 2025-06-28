@@ -2,7 +2,6 @@ package com.unsa.alerta360.presentation.account
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unsa.alerta360.data.local.UserData
 import com.unsa.alerta360.domain.model.Account
 import com.unsa.alerta360.domain.repository.AccountRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
