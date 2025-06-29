@@ -5,11 +5,13 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseUser
+import com.unsa.alerta360.data.mapper.toDomain
 import com.unsa.alerta360.data.model.UserDto
 import com.unsa.alerta360.data.network.UserApiService
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject // Si usas Hilt
 import com.unsa.alerta360.domain.model.Result
+import com.unsa.alerta360.domain.model.User
 
 class AuthRepositoryImpl @Inject constructor( // Inyecta FirebaseAuth (Hilt ejemplo)
     private val firebaseAuth: FirebaseAuth,
@@ -69,22 +71,14 @@ class AuthRepositoryImpl @Inject constructor( // Inyecta FirebaseAuth (Hilt ejem
         }
     }
 
-    override suspend fun getUserDetails(uid: String): Result<UserDto> {
-        return try {
+    override suspend fun getUserDetails(uid: String): User {
             val response = userApiService.getUserById(uid)
             if (response.isSuccessful) {
-                response.body()?.let { user ->
-                    Result.Success(user)
-                } ?: Result.Error(Exception("Usuario no encontrado"), "Usuario no encontrado")
+                return response.body()?.toDomain()
+                    ?: throw Exception("Usuario no encontrado")
             } else {
                 val errorMessage = response.errorBody()?.string() ?: "Error desconocido"
-                Result.Error(
-                    Exception("Error HTTP ${response.code()}"),
-                    "Error al obtener usuario: $errorMessage"
-                )
+                throw Exception("Error al obtener usuario: $errorMessage")
             }
-        } catch (e: Exception) {
-            Result.Error(e, "Error de conexión al obtener usuario: ${e.message}")
-        }
     }
 }

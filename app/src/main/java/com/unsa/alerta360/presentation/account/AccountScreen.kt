@@ -28,7 +28,7 @@ fun AccountScreen(
     val errorMessage by accountViewModel.errorMessage.collectAsState()
 
     LaunchedEffect(Unit) {
-        accountViewModel.loadAccount("682f1915d21cf2679fa4fa85")
+        accountViewModel.loadAccount()
     }
 
     val backgroundBrush = Brush.verticalGradient(colors = listOf(color1, color2))
