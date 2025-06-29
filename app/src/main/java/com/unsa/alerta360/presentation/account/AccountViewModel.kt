@@ -100,10 +100,6 @@ class AccountViewModel @Inject constructor(
                 // Limpiar datos del usuario
                 logoutUserUseCase()
 
-                // Limpiar el estado local
-//                _userData.value = User()
-//                _errorMessage.value = null
-
                 // Indicar que el logout fue exitoso
                 _logoutState.value = true
 
