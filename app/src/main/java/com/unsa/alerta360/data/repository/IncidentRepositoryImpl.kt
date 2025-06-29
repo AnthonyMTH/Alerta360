@@ -40,28 +40,37 @@ class IncidentRepositoryImpl @Inject constructor(
     private val ETAG_KEY = stringPreferencesKey("ETAG_INCIDENTS")
 
     override suspend fun createIncident(domain: Incident): Incident {
-        // 1) Siempre guardo local
+        // 1) Generar ID temporal para el local
+        val tempId = UUID.randomUUID().toString()
         val localEntity = domain.toEntity().copy(
-            id       = domain._id ?: UUID.randomUUID().toString(),
-            synced   = false,
-            createdAt= System.now().toString(),
-            updatedAt= System.now().toString()
+            id = tempId,
+            synced = false,
+            createdAt = System.now().toString(),
+            updatedAt = System.now().toString()
         )
         dao.insert(localEntity)
 
-        // 2) Si hay red, intento remitir remoto
+        // 2) Si hay red, intentar subir al remoto
         if (NetworkMonitor.hasNetwork(context)) {
             try {
-                val resp = api.createIncident(localEntity.toDto())
+                // Crear DTO sin ID para que MongoDB genere su propio ObjectId
+                val dtoForServer = localEntity.toDto().copy(_id = null)
+                val resp = api.createIncident(dtoForServer)
                 if (resp.isSuccessful) {
                     val remoteDto = resp.body()!!
-                    dao.insert(remoteDto.toEntity().copy(synced = true))
+                    // Eliminar el registro temporal local
+                    dao.deleteById(tempId)
+                    // Insertar el registro con ID del servidor y marcado como sincronizado
+                    val remoteEntity = remoteDto.toEntity().copy(synced = true)
+                    dao.insert(remoteEntity)
                     return remoteDto.toDomain()
                 }
-            } catch (_: Exception) { /* fallo, lo dejamos local */ }
+            } catch (e: Exception) {
+                Log.e("IncidentRepo", "Error uploading to server: ${e.message}", e)
+            }
         }
 
-        // 3) Devuelvo lo local (pendiente)
+        // 3) Devuelvo lo local si falla la subida
         return localEntity.toDomain()
     }
 

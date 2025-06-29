@@ -142,13 +142,16 @@ class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase
 
                     _uiEvent.value = AddIncidentEvent.Success("Incidente creado con éxito.")
                     _uiEvent.value = AddIncidentEvent.NavigateBack
+                    Log.e("incidente", "creado con exito")
                 } else {
                     // Emitir estado de "Error" en caso de fallo
                     _uiEvent.value = AddIncidentEvent.Error("Error al crear incidente.")
+                    Log.e("incidente", "fallo")
                 }
             } catch (e: Exception) {
                 // Capturar excepciones y emitir estado de error
                 _uiEvent.value = AddIncidentEvent.Error("Excepción al crear incidente: ${e.message}")
+                Log.e("error", "excepcion: ${e.message}")
             }
         }
 
