@@ -10,6 +10,7 @@ import com.unsa.alerta360.domain.repository.AccountRepository
 import com.unsa.alerta360.domain.repository.AuthRepository
 import com.unsa.alerta360.domain.usecase.auth.GetCurrentUserUseCase
 import com.unsa.alerta360.domain.usecase.auth.GetDetailsUserUseCase
+import com.unsa.alerta360.domain.usecase.auth.LogoutUserUseCase
 import com.unsa.alerta360.domain.usecase.auth.UpdateUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,8 @@ import javax.inject.Inject
 class AccountViewModel @Inject constructor(
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val getDetailsUserUseCase: GetDetailsUserUseCase,
-    private val updateUserUseCase: UpdateUserUseCase
+    private val updateUserUseCase: UpdateUserUseCase,
+    private val logoutUserUseCase: LogoutUserUseCase
 ) : ViewModel() {
 
     private val _userData = MutableStateFlow(User())
@@ -33,6 +35,9 @@ class AccountViewModel @Inject constructor(
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    private val _logoutState = MutableStateFlow(false)
+    val logoutState: StateFlow<Boolean> = _logoutState.asStateFlow()
 
     // Leer datos de backend
     fun loadAccount() {
@@ -87,5 +92,28 @@ class AccountViewModel @Inject constructor(
 
     fun onDistritoChange(value: String) {
         _userData.value = _userData.value.copy(district = value)
+    }
+
+    fun cerrarSesion() {
+        viewModelScope.launch {
+            try {
+                // Limpiar datos del usuario
+                logoutUserUseCase()
+
+                // Limpiar el estado local
+//                _userData.value = User()
+//                _errorMessage.value = null
+
+                // Indicar que el logout fue exitoso
+                _logoutState.value = true
+
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al cerrar sesión: ${e.message}"
+            }
+        }
+    }
+
+    fun resetLogoutState() {
+        _logoutState.value = false
     }
 }

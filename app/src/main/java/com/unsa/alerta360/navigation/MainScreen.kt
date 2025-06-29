@@ -18,8 +18,9 @@ import com.unsa.alerta360.presentation.map.MapScreen
 import com.unsa.alerta360.presentation.messages.MessagesScreen
 
 @Composable
-fun MainScreen(navController: NavHostController? = null) {
+fun MainScreen(navController: NavHostController? = null, onLogout: () -> Unit = {}) {
     val mainNavController = rememberNavController()
+
 
     Scaffold(
         bottomBar = {
@@ -39,7 +40,11 @@ fun MainScreen(navController: NavHostController? = null) {
             composable("map") { MapScreen() }
             composable("addIncident") { AddIncidentScreen(navController = mainNavController) }
             composable("messages") { MessagesScreen() }
-            composable("account") { AccountScreen() }
+            composable("account") {
+                AccountScreen(
+                    onLogoutSuccess = onLogout
+                )
+            }
         }
     }
 }

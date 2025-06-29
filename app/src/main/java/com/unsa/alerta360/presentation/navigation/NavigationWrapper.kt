@@ -83,7 +83,14 @@ fun NavigationWrapper(navHostController: NavHostController) {
                 })
         }
         composable(AppRoutes.HOME) {
-            MainScreen(navController = navHostController)
+            MainScreen(navController = navHostController,
+                onLogout = {
+                    // Navegar al login y limpiar todo el backstack
+                    navHostController.navigate(AppRoutes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                })
         }
         composable("${AppRoutes.INCIDENT_DETAIL}/{incidentId}") { backStackEntry ->
             val incidentId = backStackEntry.arguments?.getString("incidentId") ?: ""
