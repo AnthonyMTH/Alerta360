@@ -1,10 +1,12 @@
 package com.unsa.alerta360.presentation.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unsa.alerta360.domain.model.IncidentWithUser
 import com.unsa.alerta360.domain.model.Result
 import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
+import com.unsa.alerta360.domain.usecase.auth.GetCurrentUserUseCase
 import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -25,7 +27,8 @@ sealed class TabSelection {
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getAllIncidentsUseCase: GetAllIncidentsUseCase,
-    private val getAccountDetailsUseCase: GetAccountDetailsUseCase
+    private val getAccountDetailsUseCase: GetAccountDetailsUseCase,
+    private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -82,7 +85,20 @@ class HomeViewModel @Inject constructor(
     private fun applyFilter() {
         val lista = when (_selectedTab.value) {
             is TabSelection.MiHistorial ->
-                _allIncidents.value.filter { /* it.incident.user_id == miId */ true }
+                try {
+                    val currentUser = getCurrentUserUseCase()
+                    if (currentUser?.uid != null) {
+                        _allIncidents.value.filter { incidentWithUser ->
+                            incidentWithUser.incident.user_id == currentUser.uid
+                        }
+                    } else {
+                        Log.w("HomeViewModel", "Usuario actual no encontrado, mostrando lista vacía")
+                        emptyList()
+                    }
+                } catch (e: Exception) {
+                    Log.e("HomeViewModel", "Error al obtener usuario actual: ${e.message}", e)
+                    emptyList()
+                }
             TabSelection.Todos -> _allIncidents.value
         }
         _uiState.value = HomeUiState.Success(lista)
