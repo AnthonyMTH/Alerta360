@@ -5,28 +5,28 @@ import com.google.gson.annotations.SerializedName
 
 data class UserDto(
     @SerializedName("_id")
-    val uid: String,  // ID de firebase
+    val uid: String? = null,  // ID de firebase
 
     @SerializedName("first_name")
-    val firstName: String,
+    val firstName: String? = null,
 
     @SerializedName("last_name")
-    val lastName: String,
+    val lastName: String? = null,
 
     @SerializedName("email")
-    val email: String,
+    val email: String? = null,
 
     @SerializedName("phone_number")
-    val phoneNumber: String,
+    val phoneNumber: String? = null,
 
     @SerializedName("password")
-    val password: String,
+    val password: String? = null,
 
     @SerializedName("district")
-    val district: String,
+    val district: String? = null,
 
     @SerializedName("dni")
-    val dni: String,
+    val dni: String? = null,
 
     // Campos de timestamp (solo para respuestas)
     @SerializedName("createdAt")

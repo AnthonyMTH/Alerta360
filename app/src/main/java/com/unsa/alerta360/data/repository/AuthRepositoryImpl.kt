@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseUser
 import com.unsa.alerta360.data.mapper.toDomain
+import com.unsa.alerta360.data.mapper.toDto
 import com.unsa.alerta360.data.model.UserDto
 import com.unsa.alerta360.data.network.UserApiService
 import kotlinx.coroutines.tasks.await
@@ -80,5 +81,24 @@ class AuthRepositoryImpl @Inject constructor( // Inyecta FirebaseAuth (Hilt ejem
                 val errorMessage = response.errorBody()?.string() ?: "Error desconocido"
                 throw Exception("Error al obtener usuario: $errorMessage")
             }
+    }
+
+    override suspend fun updateUserDetails(uid: String, userData: User): Result<UserDto> {
+        return try {
+            val response = userApiService.updateUser(uid, userData.toDto())
+            if (response.isSuccessful) {
+                response.body()?.let { user ->
+                    Result.Success(user)
+                } ?: Result.Error(Exception("Respuesta vacía del servidor"), "Error al procesar respuesta del servidor")
+            } else {
+                val errorMessage = response.errorBody()?.string() ?: "Error desconocido"
+                Result.Error(
+                    Exception("Error HTTP ${response.code()}"),
+                    "Error al actualizar usuario: $errorMessage"
+                )
+            }
+        } catch (e: Exception) {
+            Result.Error(e, "Error de conexión al actualizar usuario: ${e.message}")
+        }
     }
 }
