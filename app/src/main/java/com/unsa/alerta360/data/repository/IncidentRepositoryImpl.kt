@@ -40,28 +40,37 @@ class IncidentRepositoryImpl @Inject constructor(
     private val ETAG_KEY = stringPreferencesKey("ETAG_INCIDENTS")
 
     override suspend fun createIncident(domain: Incident): Incident {
-        // 1) Siempre guardo local
+        // 1) Generar ID temporal para el local
+        val tempId = UUID.randomUUID().toString()
         val localEntity = domain.toEntity().copy(
-            id       = domain._id ?: UUID.randomUUID().toString(),
-            synced   = false,
-            createdAt= System.now().toString(),
-            updatedAt= System.now().toString()
+            id = tempId,
+            synced = false,
+            createdAt = System.now().toString(),
+            updatedAt = System.now().toString()
         )
         dao.insert(localEntity)
 
-        // 2) Si hay red, intento remitir remoto
+        // 2) Si hay red, intentar subir al remoto
         if (NetworkMonitor.hasNetwork(context)) {
             try {
-                val resp = api.createIncident(localEntity.toDto())
+                // Crear DTO sin ID para que MongoDB genere su propio ObjectId
+                val dtoForServer = localEntity.toDto().copy(_id = null)
+                val resp = api.createIncident(dtoForServer)
                 if (resp.isSuccessful) {
                     val remoteDto = resp.body()!!
-                    dao.insert(remoteDto.toEntity().copy(synced = true))
+                    // Eliminar el registro temporal local
+                    dao.deleteById(tempId)
+                    // Insertar el registro con ID del servidor y marcado como sincronizado
+                    val remoteEntity = remoteDto.toEntity().copy(synced = true)
+                    dao.insert(remoteEntity)
                     return remoteDto.toDomain()
                 }
-            } catch (_: Exception) { /* fallo, lo dejamos local */ }
+            } catch (e: Exception) {
+                Log.e("IncidentRepo", "Error uploading to server: ${e.message}", e)
+            }
         }
 
-        // 3) Devuelvo lo local (pendiente)
+        // 3) Devuelvo lo local si falla la subida
         return localEntity.toDomain()
     }
 
@@ -99,6 +108,48 @@ class IncidentRepositoryImpl @Inject constructor(
         dao.getById(id)?.toDomain()
     }
 
+    override suspend fun deleteIncident(id: String): Incident? {
+        return withContext(ioDispatcher) {
+            try {
+                // 1. Obtener el incidente local antes de eliminarlo para devolverlo
+                val localIncident = dao.getById(id)?.toDomain()
+                
+                // 2. Eliminar de la base de datos local inmediatamente
+                dao.deleteById(id)
+                
+                // 3. Si hay conexión, intentar eliminar del servidor
+                if (NetworkMonitor.hasNetwork(context)) {
+                    try {
+                        // Solo intentar eliminar del servidor si el ID parece ser un ObjectId válido
+                        if (isValidObjectId(id)) {
+                            val resp = api.deleteIncident(id)
+                            if (resp.isSuccessful) {
+                                Log.d("IncidentRepo", "Incidente eliminado exitosamente del servidor")
+                                return@withContext resp.body()?.toDomain() ?: localIncident
+                            } else {
+                                Log.w("IncidentRepo", "Error del servidor al eliminar: ${resp.code()}")
+                            }
+                        } else {
+                            Log.d("IncidentRepo", "ID local detectado, no se puede eliminar del servidor")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("IncidentRepo", "Excepción al eliminar del servidor: ${e.message}", e)
+                    }
+                }
+                Log.d("IncidentRepo", "Sin conexión, solo eliminado localmente")
+                return@withContext localIncident
+            } catch (e: Exception) {
+                Log.e("IncidentRepo", "Exception deleteIncident: ${e.message}", e)
+                return@withContext null
+            }
+
+        }
+    }
+
+    private fun isValidObjectId(id: String): Boolean {
+        // ObjectId de MongoDB tiene 24 caracteres hexadecimales
+        return id.length == 24 && id.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }
+    }
 
     private suspend fun fetchAndCacheIncidents() = withContext(ioDispatcher) {
         // tu lógica exacta de ETag y API

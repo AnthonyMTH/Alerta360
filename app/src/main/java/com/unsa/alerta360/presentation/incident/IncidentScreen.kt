@@ -6,13 +6,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +46,36 @@ fun IncidentScreen(
 
     val incident by viewModel.currentIncident
     val accountData by viewModel.accountData
+    val isDeleting by viewModel.isDeleting
+    val deleteSuccess by viewModel.deleteSuccess
+    val deleteError by viewModel.deleteError
+
+    // Estado para mostrar el diálogo de confirmación
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // Efecto para navegar de vuelta cuando se elimine exitosamente
+    LaunchedEffect(deleteSuccess) {
+        if (deleteSuccess) {
+            viewModel.resetDeleteSuccess()
+            onNavigateBack()
+        }
+    }
+
+    // Efecto para mostrar errores de eliminación
+    LaunchedEffect(deleteError) {
+        deleteError?.let { error ->
+            // Aquí se podría mostrar un Toast o SnackBar
+            viewModel.resetDeleteError()
+        }
+    }
+
+    // Limpieza cuando se sale del screen
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetDeleteSuccess()
+            viewModel.resetDeleteError()
+        }
+    }
 
     val backgroundColor = Brush.verticalGradient(
         colors = listOf(color1, color2)
@@ -83,7 +118,7 @@ fun IncidentScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.8f)
+                    .weight(1f) // Cambiado para dar espacio al botón
                     .padding(vertical = 8.dp),
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.cardElevation(8.dp),
@@ -151,7 +186,50 @@ fun IncidentScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Botón de eliminar (solo si es el dueño del incidente)
+            if (viewModel.isOwner()) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { showDeleteDialog = true },
+                    enabled = !isDeleting,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    if (isDeleting) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Eliminando...", color = Color.White, fontSize = 16.sp)
+                        }
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Eliminar Incidente", color = Color.White, fontSize = 16.sp)
+                        }
+                    }
+                }
+            }
+
+                    Spacer(modifier = Modifier.height(16.dp))
         }
     } ?: run {
         Box(
@@ -162,5 +240,34 @@ fun IncidentScreen(
         ) {
             CircularProgressIndicator(color = Color.White)
         }
+    }
+    // Diálogo de confirmación para eliminar
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = {
+                Text("Confirmar eliminación")
+            },
+            text = {
+                Text("¿Estás seguro de que quieres eliminar este incidente? Esta acción no se puede deshacer.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteIncident()
+                    }
+                ) {
+                    Text("Eliminar", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }

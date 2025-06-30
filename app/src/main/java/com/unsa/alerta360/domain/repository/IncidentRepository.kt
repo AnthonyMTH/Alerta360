@@ -7,5 +7,6 @@ interface IncidentRepository {
     suspend fun createIncident(incident: Incident): Incident?
     suspend fun getAllIncidents(): List<Incident>
     suspend fun getIncident(id: String): Incident?
+    suspend fun deleteIncident(id: String): Incident?
     fun observeIncidents(): Flow<List<Incident>>
 }

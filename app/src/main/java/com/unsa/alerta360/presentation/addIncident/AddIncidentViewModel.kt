@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.cloudinary.Cloudinary
 import com.cloudinary.Configuration
 import com.unsa.alerta360.domain.model.Incident
+import com.unsa.alerta360.domain.usecase.auth.GetCurrentUserUseCase
 import com.unsa.alerta360.domain.usecase.incident.CreateIncidentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,10 @@ sealed class AddIncidentEvent {
 }
 
 @HiltViewModel
-class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase: CreateIncidentUseCase) : ViewModel() {
+class AddIncidentViewModel @Inject constructor(
+    private val createIncidentUseCase: CreateIncidentUseCase,
+    private val getCurrentUserUseCase: GetCurrentUserUseCase
+) : ViewModel() {
 
     private val _titulo = MutableStateFlow("")
     val titulo: StateFlow<String> = _titulo
@@ -102,19 +106,10 @@ class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase
 
 
         viewModelScope.launch {
-            val newIncident = Incident(
-                description = _description.value,
-                incidentType = _tipoIncidente.value,
-                ubication = _direccion.value,
-                district = _distrito.value,
-                geolocation = "-1233213, 123123", // Se calculará luego con FusedLocationProviderClient
-                evidence = listOf("https://elbuho.pe/wp-content/uploads/2024/05/Noticiero-17-de-mayo-2024.jpeg",
-                    "https://i.ytimg.com/vi/VCOTrE-1j-U/maxresdefault.jpg"), // datos mock
-                user_id = "682f18e1d21cf2679fa4fa81", // ID luego se integrará con usuario autenticado
-                title = _titulo.value
-            )
             try {
                 val evidenceList = mutableListOf<String>()
+                val userId = getCurrentUserUseCase()!!.uid
+
                 imageUri.value?.let { uri ->
                     val url = uploadImageToCloudinary(
                         context = context,
@@ -129,9 +124,9 @@ class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase
                     description = _description.value,
                     incidentType = _tipoIncidente.value,
                     ubication = _direccion.value,
-                    geolocation = "-1233213, 123123",
+                    geolocation = "-1233213, 123123", // Se calculará luego con FusedLocationProviderClient
                     evidence = evidenceList,
-                    user_id = "682f18e1d21cf2679fa4fa81",
+                    user_id = userId,
                     title = _titulo.value,
                     district = _distrito.value
                 )
@@ -142,13 +137,16 @@ class AddIncidentViewModel @Inject constructor(private val createIncidentUseCase
 
                     _uiEvent.value = AddIncidentEvent.Success("Incidente creado con éxito.")
                     _uiEvent.value = AddIncidentEvent.NavigateBack
+                    Log.e("incidente", "creado con exito")
                 } else {
                     // Emitir estado de "Error" en caso de fallo
                     _uiEvent.value = AddIncidentEvent.Error("Error al crear incidente.")
+                    Log.e("incidente", "fallo")
                 }
             } catch (e: Exception) {
                 // Capturar excepciones y emitir estado de error
                 _uiEvent.value = AddIncidentEvent.Error("Excepción al crear incidente: ${e.message}")
+                Log.e("error", "excepcion: ${e.message}")
             }
         }
 

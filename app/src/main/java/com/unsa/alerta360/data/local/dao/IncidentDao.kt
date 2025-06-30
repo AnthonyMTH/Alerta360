@@ -31,4 +31,7 @@ interface IncidentDao {
 
     @Query("SELECT * FROM incident WHERE synced = 0")
     suspend fun getPending(): List<IncidentEntity>
+
+    @Query("DELETE FROM incident WHERE id = :id")
+    suspend fun deleteById(id: String)
 }

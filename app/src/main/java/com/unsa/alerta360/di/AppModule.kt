@@ -7,20 +7,16 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import com.unsa.alerta360.data.repository.AuthRepositoryImpl
-import com.unsa.alerta360.data.repository.UserRepositoryImpl
 import com.unsa.alerta360.domain.repository.AuthRepository
-import com.unsa.alerta360.domain.repository.UserRepository
 import com.unsa.alerta360.domain.usecase.auth.GetCurrentUserUseCase
 import com.unsa.alerta360.domain.usecase.auth.LoginUserUseCase
 import com.unsa.alerta360.domain.usecase.auth.RegisterUserUseCase
-import com.unsa.alerta360.domain.usecase.user.SaveUserDetailsUseCase
-import com.unsa.alerta360.domain.usecase.user.GetUserDetailsUseCase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.unsa.alerta360.data.local.dao.IncidentDao
 import com.unsa.alerta360.data.local.room.AppDatabase
 import com.unsa.alerta360.data.network.AccountApiService
 import com.unsa.alerta360.data.network.IncidentApi
+import com.unsa.alerta360.data.network.UserApiService
 import com.unsa.alerta360.data.repository.AccountRepositoryImpl
 import com.unsa.alerta360.data.repository.IncidentRepositoryImpl
 import com.unsa.alerta360.domain.repository.AccountRepository
@@ -67,23 +63,14 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(firebaseAuth: FirebaseAuth): AuthRepository {
-        return AuthRepositoryImpl(firebaseAuth)
+    fun provideAuthRepository(firebaseAuth: FirebaseAuth, apiService: UserApiService): AuthRepository {
+        return AuthRepositoryImpl(firebaseAuth, apiService)
     }
 
     @Provides
     @Singleton
     fun provideAccountRepository(apiService: AccountApiService): AccountRepository {
         return AccountRepositoryImpl(apiService)
-    }
-
-    @Provides
-    @Singleton
-    fun provideUserRepository(
-        firestore: FirebaseFirestore,
-        accountApiService: AccountApiService
-    ): UserRepository {
-        return UserRepositoryImpl(firestore, accountApiService)
     }
     
     @Provides
@@ -107,27 +94,14 @@ object UseCaseModule {
     @ViewModelScoped
     fun provideRegisterUserUseCase(
         authRepository: AuthRepository,
-        userRepository: UserRepository
     ): RegisterUserUseCase {
-        return RegisterUserUseCase(authRepository, userRepository)
+        return RegisterUserUseCase(authRepository)
     }
 
     @Provides
     @ViewModelScoped
     fun provideGetCurrentUserUseCase(authRepository: AuthRepository): GetCurrentUserUseCase {
         return GetCurrentUserUseCase(authRepository)
-    }
-
-    @Provides
-    @ViewModelScoped
-    fun provideSaveUserDetailsUseCase(userRepository: UserRepository): SaveUserDetailsUseCase {
-        return SaveUserDetailsUseCase(userRepository)
-    }
-
-    @Provides
-    @ViewModelScoped
-    fun provideGetUserDetailsUseCase(userRepository: UserRepository): GetUserDetailsUseCase {
-        return GetUserDetailsUseCase(userRepository)
     }
 
     @Provides

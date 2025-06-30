@@ -30,7 +30,7 @@ fun IncidentDto.toEntity(): IncidentEntity = IncidentEntity(
     createdAt   = this.createdAt?.let { Instant.parse(it) }.toString(),
     updatedAt   = this.updatedAt?.let { Instant.parse(it) }.toString(),
     version     = this.__v,
-    synced      = false
+    synced      = true  // Los datos del servidor YA están sincronizados
 )
 
 fun Incident.toEntity(): IncidentEntity = IncidentEntity(
