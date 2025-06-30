@@ -49,6 +49,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun refreshIncidents() {
+        _uiState.value = HomeUiState.Loading
         observeIncidents() // esto re-suscribe y dispara de nuevo el fetch (onStart)
     }
 

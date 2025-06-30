@@ -108,6 +108,48 @@ class IncidentRepositoryImpl @Inject constructor(
         dao.getById(id)?.toDomain()
     }
 
+    override suspend fun deleteIncident(id: String): Incident? {
+        return withContext(ioDispatcher) {
+            try {
+                // 1. Obtener el incidente local antes de eliminarlo para devolverlo
+                val localIncident = dao.getById(id)?.toDomain()
+                
+                // 2. Eliminar de la base de datos local inmediatamente
+                dao.deleteById(id)
+                
+                // 3. Si hay conexión, intentar eliminar del servidor
+                if (NetworkMonitor.hasNetwork(context)) {
+                    try {
+                        // Solo intentar eliminar del servidor si el ID parece ser un ObjectId válido
+                        if (isValidObjectId(id)) {
+                            val resp = api.deleteIncident(id)
+                            if (resp.isSuccessful) {
+                                Log.d("IncidentRepo", "Incidente eliminado exitosamente del servidor")
+                                return@withContext resp.body()?.toDomain() ?: localIncident
+                            } else {
+                                Log.w("IncidentRepo", "Error del servidor al eliminar: ${resp.code()}")
+                            }
+                        } else {
+                            Log.d("IncidentRepo", "ID local detectado, no se puede eliminar del servidor")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("IncidentRepo", "Excepción al eliminar del servidor: ${e.message}", e)
+                    }
+                }
+                Log.d("IncidentRepo", "Sin conexión, solo eliminado localmente")
+                return@withContext localIncident
+            } catch (e: Exception) {
+                Log.e("IncidentRepo", "Exception deleteIncident: ${e.message}", e)
+                return@withContext null
+            }
+
+        }
+    }
+
+    private fun isValidObjectId(id: String): Boolean {
+        // ObjectId de MongoDB tiene 24 caracteres hexadecimales
+        return id.length == 24 && id.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }
+    }
 
     private suspend fun fetchAndCacheIncidents() = withContext(ioDispatcher) {
         // tu lógica exacta de ETag y API
