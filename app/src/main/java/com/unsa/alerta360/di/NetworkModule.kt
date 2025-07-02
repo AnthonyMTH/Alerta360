@@ -22,8 +22,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://backend-alerta360.onrender.com/api/v1/"
-
+    //private const val BASE_URL = "https://backend-alerta360.onrender.com/api/v1/"
+    private const val BASE_URL = "http://10.0.2.2:5000/api/v1/"
     @Provides
     @Singleton
     fun provideGson(): Gson = GsonBuilder()

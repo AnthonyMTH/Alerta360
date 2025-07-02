@@ -63,6 +63,10 @@ class IncidentRepositoryImpl @Inject constructor(
                     // Insertar el registro con ID del servidor y marcado como sincronizado
                     val remoteEntity = remoteDto.toEntity().copy(synced = true)
                     dao.insert(remoteEntity)
+
+                    // Notificar a otros usuarios vía FCM (se maneja en el backend)
+                    Log.d("IncidentRepo", "Incident created successfully: ${remoteDto._id}")
+
                     return remoteDto.toDomain()
                 }
             } catch (e: Exception) {
