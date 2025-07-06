@@ -109,4 +109,11 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+
+    // Maps Compose
+    implementation("com.google.maps.android:maps-compose:4.3.3")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+
+    // Maps Utils (for Heatmaps)
+    implementation("com.google.maps.android:maps-utils-ktx:5.0.0")
 }

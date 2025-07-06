@@ -47,6 +47,11 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="ALERTA360_INCIDENTS" />
 
+        <!-- APIKEY para google maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCDED7qYC7yBbBWP6UdUdYkG9t9lYVNZio" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
