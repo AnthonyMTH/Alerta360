@@ -15,7 +15,6 @@ import com.unsa.alerta360.presentation.home.HomeScreen
 import com.unsa.alerta360.presentation.incident.IncidentScreen
 import com.unsa.alerta360.presentation.incident.IncidentViewModel
 import com.unsa.alerta360.presentation.map.HeatmapScreen
-import com.unsa.alerta360.presentation.map.MapScreen
 import com.unsa.alerta360.presentation.messages.MessagesScreen
 
 @Composable
