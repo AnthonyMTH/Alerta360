@@ -5,40 +5,49 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.unsa.alerta360.data.local.dao.IncidentDao
-import com.unsa.alerta360.data.mapper.toDto
-import com.unsa.alerta360.data.mapper.toEntity
-import com.unsa.alerta360.data.network.IncidentApi
+import com.unsa.alerta360.domain.repository.FcmRepository
+import com.unsa.alerta360.domain.repository.IncidentRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
 @HiltWorker
 class SyncIncidentsWorker @AssistedInject constructor(
     @Assisted context: Context,
-    @Assisted params: WorkerParameters,
-    private val dao: IncidentDao,
-    private val api: IncidentApi
-): CoroutineWorker(context, params) {
+    @Assisted workerParams: WorkerParameters,
+    private val incidentRepository: IncidentRepository,
+    private val fcmRepository: FcmRepository
+) : CoroutineWorker(context, workerParams) {
+
+    companion object {
+        private const val TAG = "SyncIncidentsWorker"
+    }
 
     override suspend fun doWork(): Result {
-        val pendings = dao.getPending()
-        var successCount = 0
+        return try {
+            Log.d(TAG, "Starting incident synchronization")
 
-        pendings.forEach { entity ->
-            try {
-                val resp = api.createIncident(entity.toDto())
-                if (resp.isSuccessful) {
-                    val remote = resp.body()!!
-                    // Eliminar el registro local pendiente
-                    dao.deleteById(entity.id)
-                    // Insertar el registro sincronizado con ID del servidor
-                    dao.insert(remote.toEntity().copy(synced = true))
-                    successCount++
+            // Sincronizar incidentes
+            incidentRepository.getAllIncidents()
+
+            // Verificar y actualizar token FCM si es necesario
+            val forceSync = inputData.getBoolean("force_sync", false)
+            val userId = inputData.getString("user_id")
+
+            if (forceSync && userId != null) {
+                fcmRepository.getCurrentToken()?.let { token ->
+                    fcmRepository.sendTokenToServer(userId, token)
                 }
-            } catch (e: Exception) {
-                Log.e("SyncWorker", "Error syncing incident ${entity.id}: ${e.message}")
+            }
+
+            Log.d(TAG, "Incident synchronization completed successfully")
+            Result.success()
+        } catch (exception: Exception) {
+            Log.e(TAG, "Error during sync", exception)
+            if (runAttemptCount < 3) {
+                Result.retry()
+            } else {
+                Result.failure()
             }
         }
-        return if (successCount > 0) Result.success() else Result.retry()
     }
 }

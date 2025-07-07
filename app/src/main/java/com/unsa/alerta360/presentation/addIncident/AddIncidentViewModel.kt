@@ -1,13 +1,13 @@
 package com.unsa.alerta360.presentation.addIncident
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cloudinary.Cloudinary
-import com.cloudinary.Configuration
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.unsa.alerta360.domain.model.Incident
 import com.unsa.alerta360.domain.usecase.auth.GetCurrentUserUseCase
 import com.unsa.alerta360.domain.usecase.incident.CreateIncidentUseCase
@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
@@ -30,7 +31,8 @@ sealed class AddIncidentEvent {
 @HiltViewModel
 class AddIncidentViewModel @Inject constructor(
     private val createIncidentUseCase: CreateIncidentUseCase,
-    private val getCurrentUserUseCase: GetCurrentUserUseCase
+    private val getCurrentUserUseCase: GetCurrentUserUseCase,
+    private val fusedLocationClient: FusedLocationProviderClient
 ) : ViewModel() {
 
     private val _titulo = MutableStateFlow("")
@@ -94,9 +96,8 @@ class AddIncidentViewModel @Inject constructor(
         _uiEvent.value = AddIncidentEvent.NavigateBack
     }
 
+    @SuppressLint("MissingPermission")
     fun guardar(context: Context) {
-
-
         _uiEvent.value = AddIncidentEvent.Loading
 
         if (_titulo.value.isBlank() || _description.value.isBlank() || _tipoIncidente.value.isBlank() || _direccion.value.isBlank()) {
@@ -104,9 +105,15 @@ class AddIncidentViewModel @Inject constructor(
             return
         }
 
-
         viewModelScope.launch {
             try {
+                val location = fusedLocationClient.lastLocation.await()
+                val geolocation = if (location != null) {
+                    "${location.latitude},${location.longitude}"
+                } else {
+                    "0,0" // Default si no se consigue
+                }
+
                 val evidenceList = mutableListOf<String>()
                 val userId = getCurrentUserUseCase()!!.uid
 
@@ -124,7 +131,7 @@ class AddIncidentViewModel @Inject constructor(
                     description = _description.value,
                     incidentType = _tipoIncidente.value,
                     ubication = _direccion.value,
-                    geolocation = "-1233213, 123123", // Se calculará luego con FusedLocationProviderClient
+                    geolocation = geolocation,
                     evidence = evidenceList,
                     user_id = userId,
                     title = _titulo.value,
@@ -133,24 +140,17 @@ class AddIncidentViewModel @Inject constructor(
 
                 val result = createIncidentUseCase(newIncident)
                 if (result != null) {
-                    // Emitir estado de "Éxito"
-
                     _uiEvent.value = AddIncidentEvent.Success("Incidente creado con éxito.")
                     _uiEvent.value = AddIncidentEvent.NavigateBack
-                    Log.e("incidente", "creado con exito")
                 } else {
-                    // Emitir estado de "Error" en caso de fallo
                     _uiEvent.value = AddIncidentEvent.Error("Error al crear incidente.")
-                    Log.e("incidente", "fallo")
                 }
             } catch (e: Exception) {
-                // Capturar excepciones y emitir estado de error
                 _uiEvent.value = AddIncidentEvent.Error("Excepción al crear incidente: ${e.message}")
-                Log.e("error", "excepcion: ${e.message}")
             }
         }
-
     }
+
     fun clearEvent() {
         _uiEvent.value = null
     }
@@ -166,6 +166,8 @@ private fun getFileFromUri(context: Context, uri: Uri): File {
     }
     return tempFile
 }
+
+
 suspend fun uploadImageToCloudinary(
     context: Context,
     imageUri: Uri,
@@ -174,7 +176,6 @@ suspend fun uploadImageToCloudinary(
 ): String? = withContext(Dispatchers.IO) {
     val file = getFileFromUri(context, imageUri)
     val cloudinary = Cloudinary("cloudinary://$cloudName@$cloudName")
-    // Parámetros a pasar
     val params = mutableMapOf<String, Any>(
         "upload_preset" to uploadPreset,
         "unsigned" to true

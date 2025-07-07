@@ -1,5 +1,6 @@
 package com.unsa.alerta360.presentation.addIncident
 
+import android.Manifest
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -51,9 +52,8 @@ import com.unsa.alerta360.ui.theme.color1
 import com.unsa.alerta360.ui.theme.color2
 import com.unsa.alerta360.presentation.login.lightCreamColor
 
-
 @Composable
-fun AddIncidentScreen( navController: NavController) {
+fun AddIncidentScreen(navController: NavController) {
 
     val viewModel: AddIncidentViewModel = hiltViewModel()
 
@@ -71,17 +71,26 @@ fun AddIncidentScreen( navController: NavController) {
 
     val uiEvent by viewModel.uiEvent.collectAsState()
 
-    val context = LocalContext.current  // Obtener el contexto dentro del Composable
+    val context = LocalContext.current
 
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) ||
+            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false)
+        ) {
+            viewModel.guardar(context)
+        } else {
+            Toast.makeText(context, "Permiso de ubicación es requerido", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     LaunchedEffect(uiEvent) {
         if (uiEvent is AddIncidentEvent.NavigateBack) {
             navController.popBackStack()
             viewModel.clearEvent()
         }
-
     }
-
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -109,7 +118,10 @@ fun AddIncidentScreen( navController: NavController) {
         ) {
             Text(
                 text = "Crear incidencia",
-                style = MaterialTheme.typography.headlineSmall.copy(color = lightCreamColor, fontWeight = FontWeight.ExtraBold)
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    color = lightCreamColor,
+                    fontWeight = FontWeight.ExtraBold
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -132,7 +144,7 @@ fun AddIncidentScreen( navController: NavController) {
                     unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f) // Color del label
                 ),
 
-            )
+                )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -155,7 +167,7 @@ fun AddIncidentScreen( navController: NavController) {
                     unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f) // Color del label
                 ),
 
-            )
+                )
             Spacer(modifier = Modifier.height(16.dp))
 
             DropdownSelector(
@@ -185,11 +197,16 @@ fun AddIncidentScreen( navController: NavController) {
                     unfocusedLabelColor = lightCreamColor.copy(alpha = 0.7f) // Color del label
                 ),
 
-            )
+                )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            DropdownSelector("Distrito", distrito, viewModel.distritos, viewModel::onDistritoChange)
+            DropdownSelector(
+                "Distrito",
+                distrito,
+                viewModel.distritos,
+                viewModel::onDistritoChange
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -214,7 +231,7 @@ fun AddIncidentScreen( navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button (
+            Button(
                 onClick = { viewModel.cancelar() },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -227,8 +244,15 @@ fun AddIncidentScreen( navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button (
-                onClick = { viewModel.guardar(context) },
+            Button(
+                onClick = {
+                    locationPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -244,14 +268,20 @@ fun AddIncidentScreen( navController: NavController) {
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
+
                 is AddIncidentEvent.Success -> {
                     Text(
                         text = event.message,
                         color = Color.Green,
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
-                    Toast.makeText(context, (uiEvent as AddIncidentEvent.Success).message, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        (uiEvent as AddIncidentEvent.Success).message,
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
+
                 is AddIncidentEvent.Error -> {
                     Text(
                         text = event.message,
@@ -259,6 +289,7 @@ fun AddIncidentScreen( navController: NavController) {
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
+
                 else -> {
                     // No hacer nada si el estado es NavigateBack o cualquier otro no manejado
                 }
@@ -268,6 +299,7 @@ fun AddIncidentScreen( navController: NavController) {
     }
 
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownSelector(

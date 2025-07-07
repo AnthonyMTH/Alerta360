@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.androidx.hilt.common)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -97,7 +98,26 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.0.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
+    // Para FCM
+    implementation("com.google.firebase:firebase-messaging:23.4.0")
+    // Para notificaciones locales mejoradas
+    implementation("androidx.core:core:1.12.0")
+    // Para WorkManager (notificaciones en background)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    // Para iconos de notificación
+    implementation("androidx.vectordrawable:vectordrawable:1.1.0")
+
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+
+    // Maps Compose
+    implementation("com.google.maps.android:maps-compose:4.3.3")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+
+    // Maps Utils (for Heatmaps)
+    implementation("com.google.maps.android:maps-utils-ktx:5.0.0")
+
+    // Google Maps Utils KTX
+    implementation("com.google.maps.android:maps-utils-ktx:3.4.0")
 }

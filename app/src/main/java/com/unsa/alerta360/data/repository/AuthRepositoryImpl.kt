@@ -9,14 +9,18 @@ import com.unsa.alerta360.data.mapper.toDomain
 import com.unsa.alerta360.data.mapper.toDto
 import com.unsa.alerta360.data.model.UserDto
 import com.unsa.alerta360.data.network.UserApiService
+import com.unsa.alerta360.di.IoDispatcher
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject // Si usas Hilt
 import com.unsa.alerta360.domain.model.Result
 import com.unsa.alerta360.domain.model.User
+import kotlinx.coroutines.CoroutineDispatcher
 
 class AuthRepositoryImpl @Inject constructor( // Inyecta FirebaseAuth (Hilt ejemplo)
     private val firebaseAuth: FirebaseAuth,
-    private val userApiService: UserApiService
+    private val userApiService: UserApiService,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : AuthRepository {
 
     override suspend fun loginUser(email: String, password: String): Result<FirebaseUser> {
@@ -72,10 +76,10 @@ class AuthRepositoryImpl @Inject constructor( // Inyecta FirebaseAuth (Hilt ejem
         }
     }
 
-    override suspend fun getUserDetails(uid: String): User {
+    override suspend fun getUserDetails(uid: String): User = withContext(ioDispatcher) {
             val response = userApiService.getUserById(uid)
             if (response.isSuccessful) {
-                return response.body()?.toDomain()
+                return@withContext response.body()?.toDomain()
                     ?: throw Exception("Usuario no encontrado")
             } else {
                 val errorMessage = response.errorBody()?.string() ?: "Error desconocido"

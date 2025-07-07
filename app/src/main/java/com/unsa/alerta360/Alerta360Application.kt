@@ -20,11 +20,16 @@ class Alerta360Application : Application(), Configuration.Provider {
 
 
         NetworkMonitor.startListening(this)
+        // Inicializar FCM
+        initializeFcm()
     }
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .build()
-
+    private fun initializeFcm() {
+        // La inicialización real se hará desde el ViewModel principal
+        // cuando el usuario esté autenticado
+    }
 }

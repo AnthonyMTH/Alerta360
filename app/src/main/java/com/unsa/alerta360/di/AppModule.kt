@@ -12,6 +12,7 @@ import com.unsa.alerta360.domain.usecase.auth.GetCurrentUserUseCase
 import com.unsa.alerta360.domain.usecase.auth.LoginUserUseCase
 import com.unsa.alerta360.domain.usecase.auth.RegisterUserUseCase
 import com.google.firebase.auth.FirebaseAuth
+import com.unsa.alerta360.data.local.UserPreferencesHelper
 import com.unsa.alerta360.data.local.dao.IncidentDao
 import com.unsa.alerta360.data.local.room.AppDatabase
 import com.unsa.alerta360.data.network.AccountApiService
@@ -20,8 +21,13 @@ import com.unsa.alerta360.data.network.UserApiService
 import com.unsa.alerta360.data.repository.AccountRepositoryImpl
 import com.unsa.alerta360.data.repository.IncidentRepositoryImpl
 import com.unsa.alerta360.domain.repository.AccountRepository
+import com.unsa.alerta360.domain.repository.FcmRepository
 import com.unsa.alerta360.domain.repository.IncidentRepository
 import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
+import com.unsa.alerta360.domain.usecase.fcm.InitializeFcmUseCase
+import com.unsa.alerta360.domain.usecase.fcm.SubscribeToLocationUseCase
+import com.unsa.alerta360.domain.usecase.fcm.UpdateFcmTokenUseCase
+import com.unsa.alerta360.domain.usecase.fcm.UpdateNotificationPreferencesUseCase
 import com.unsa.alerta360.domain.usecase.incident.CreateIncidentUseCase
 import com.unsa.alerta360.domain.usecase.incident.GetAllIncidentsUseCase
 import com.unsa.alerta360.domain.usecase.incident.GetIncidentUseCase
@@ -63,8 +69,8 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(firebaseAuth: FirebaseAuth, apiService: UserApiService): AuthRepository {
-        return AuthRepositoryImpl(firebaseAuth, apiService)
+    fun provideAuthRepository(firebaseAuth: FirebaseAuth, apiService: UserApiService, @IoDispatcher ioDispatcher: CoroutineDispatcher): AuthRepository {
+        return AuthRepositoryImpl(firebaseAuth, apiService, ioDispatcher)
     }
 
     @Provides
@@ -77,6 +83,12 @@ object RepositoryModule {
     @Singleton
     fun provideIncidentRepository(api: IncidentApi, dao: IncidentDao, prefs: DataStore<Preferences>, @IoDispatcher ioDispatcher: CoroutineDispatcher, @ApplicationContext context: Context): IncidentRepository {
         return IncidentRepositoryImpl(api, dao, prefs, ioDispatcher, context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserPreferencesHelper(@ApplicationContext context: Context): UserPreferencesHelper {
+        return UserPreferencesHelper(context)
     }
 }
 
@@ -128,4 +140,30 @@ object UseCaseModule {
     ): GetIncidentUseCase {
         return GetIncidentUseCase(incidentRepository)
     }
+
+    @Provides
+    @ViewModelScoped
+    fun provideInitializeFcmUseCase(fcmRepository: FcmRepository): InitializeFcmUseCase {
+        return InitializeFcmUseCase(fcmRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideSubscribeToLocationUseCase(fcmRepository: FcmRepository): SubscribeToLocationUseCase {
+        return SubscribeToLocationUseCase(fcmRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideUpdateFcmTokenUseCase(fcmRepository: FcmRepository): UpdateFcmTokenUseCase {
+        return UpdateFcmTokenUseCase(fcmRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideUpdateNotificationPreferencesUseCase(fcmRepository: FcmRepository): UpdateNotificationPreferencesUseCase {
+        return UpdateNotificationPreferencesUseCase(fcmRepository)
+    }
+
+
 }
