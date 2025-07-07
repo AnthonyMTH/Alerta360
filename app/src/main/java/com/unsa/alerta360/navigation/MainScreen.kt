@@ -39,7 +39,7 @@ fun MainScreen(navController: NavHostController? = null, onLogout: () -> Unit = 
             //    val incidentViewModel: IncidentViewModel = viewModel()
             //    IncidentScreen(viewModel = incidentViewModel)
             //}
-            composable("map") { HeatmapScreen(openDrawer = {}, navController = navController!!) }
+            composable("map") { HeatmapScreen(navController = navController!!) }
             composable("addIncident") { AddIncidentScreen(navController = mainNavController) }
             composable("messages") { MessagesScreen() }
             composable("account") {

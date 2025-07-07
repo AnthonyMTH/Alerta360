@@ -17,4 +17,9 @@ object LocationModule {
     fun provideFusedLocationProviderClient(@ApplicationContext context: Context): FusedLocationProviderClient {
         return LocationServices.getFusedLocationProviderClient(context)
     }
+
+    @Provides
+    fun provideLocationService(@ApplicationContext context: Context, fusedLocationClient: FusedLocationProviderClient): com.unsa.alerta360.data.service.LocationService {
+        return com.unsa.alerta360.data.service.LocationService(context, fusedLocationClient)
+    }
 }
