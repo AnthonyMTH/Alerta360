@@ -69,8 +69,8 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(firebaseAuth: FirebaseAuth, apiService: UserApiService): AuthRepository {
-        return AuthRepositoryImpl(firebaseAuth, apiService)
+    fun provideAuthRepository(firebaseAuth: FirebaseAuth, apiService: UserApiService, @IoDispatcher ioDispatcher: CoroutineDispatcher): AuthRepository {
+        return AuthRepositoryImpl(firebaseAuth, apiService, ioDispatcher)
     }
 
     @Provides

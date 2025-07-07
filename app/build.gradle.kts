@@ -117,4 +117,7 @@ dependencies {
 
     // Maps Utils (for Heatmaps)
     implementation("com.google.maps.android:maps-utils-ktx:5.0.0")
+
+    // Google Maps Utils KTX
+    implementation("com.google.maps.android:maps-utils-ktx:3.4.0")
 }
