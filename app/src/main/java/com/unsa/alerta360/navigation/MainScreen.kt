@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -13,11 +12,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.unsa.alerta360.presentation.account.AccountScreen
 import com.unsa.alerta360.presentation.addIncident.AddIncidentScreen
+import com.unsa.alerta360.presentation.chat.ChatScreen
+import com.unsa.alerta360.presentation.chatList.ChatListScreen
 import com.unsa.alerta360.presentation.home.HomeScreen
-import com.unsa.alerta360.presentation.incident.IncidentScreen
-import com.unsa.alerta360.presentation.incident.IncidentViewModel
 import com.unsa.alerta360.presentation.map.HeatmapScreen
-import com.unsa.alerta360.presentation.messages.MessagesScreen
 
 @Composable
 fun MainScreen(navController: NavHostController? = null, onLogout: () -> Unit = {}) {
@@ -41,7 +39,24 @@ fun MainScreen(navController: NavHostController? = null, onLogout: () -> Unit = 
             //}
             composable("map") { HeatmapScreen(navController = navController!!) }
             composable("addIncident") { AddIncidentScreen(navController = mainNavController) }
-            composable("messages") { MessagesScreen() }
+            composable("messages") { ChatListScreen(onChatClick = { chat ->
+                val encodedName = java.net.URLEncoder.encode(chat.name, "UTF-8")
+                mainNavController.navigate("chat/${chat.id}/$encodedName")
+            }) }
+            composable(
+                route = "chat/{chatId}/{chatName}",
+                arguments = listOf(
+                    navArgument("chatId") { type = NavType.StringType },
+                    navArgument("chatName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                ChatScreen(
+                    chatId = backStackEntry.arguments?.getString("chatId"),
+                    chatName = backStackEntry.arguments?.getString("chatName")?.let {
+                        java.net.URLDecoder.decode(it, "UTF-8")
+                    }
+                )
+            }
             composable("account") {
                 AccountScreen(
                     onLogoutSuccess = onLogout

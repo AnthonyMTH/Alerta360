@@ -1,0 +1,136 @@
+package com.unsa.alerta360.presentation.chat
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.unsa.alerta360.domain.model.Message
+import com.unsa.alerta360.ui.theme.color1
+import com.unsa.alerta360.ui.theme.color2
+import com.unsa.alerta360.ui.theme.lightCreamColor
+import java.text.SimpleDateFormat
+import java.util.*
+
+@Composable
+fun ChatScreen(chatId: String?, chatName: String?) {
+    val viewModel: ChatViewModel = viewModel()
+    val messages by viewModel.messages.collectAsState()
+    var text by remember { mutableStateOf("") }
+
+    LaunchedEffect(chatId) {
+        chatId?.let {
+            viewModel.loadMessages(it)
+        }
+    }
+
+    val backgroundColor = Brush.verticalGradient(
+        colors = listOf(color1, color2)
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(brush = backgroundColor)
+    ) {
+        // Title
+        Text(
+            text = chatName ?: "Chat",
+            style = MaterialTheme.typography.headlineMedium.copy(
+                color = lightCreamColor,
+                fontWeight = FontWeight.Bold,
+                fontSize = 28.sp
+            ),
+            modifier = Modifier.padding(16.dp)
+        )
+
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp),
+            reverseLayout = true
+        ) {
+            items(messages.reversed()) { message ->
+                MessageItem(message = message)
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier.weight(1f),
+                label = { Text("Message") },
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = com.unsa.alerta360.presentation.login.lightCreamColor,
+                    unfocusedTextColor = com.unsa.alerta360.presentation.login.lightCreamColor,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    cursorColor = com.unsa.alerta360.presentation.login.lightCreamColor,
+                    focusedIndicatorColor = com.unsa.alerta360.presentation.login.lightCreamColor, // Color del borde cuando está enfocado
+                    unfocusedIndicatorColor = com.unsa.alerta360.presentation.login.lightCreamColor.copy(alpha = 0.7f), // Color del borde cuando no está enfocado
+                    focusedLabelColor = com.unsa.alerta360.presentation.login.lightCreamColor, // Color del label cuando está enfocado
+                    unfocusedLabelColor = com.unsa.alerta360.presentation.login.lightCreamColor.copy(alpha = 0.7f) // Color del label
+                )
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = {
+                viewModel.sendMessage(text)
+                text = ""
+            }) {
+                Text("Send")
+            }
+        }
+    }
+}
+
+@Composable
+fun MessageItem(message: Message) {
+    val formatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = MaterialTheme.shapes.medium,
+        color = lightCreamColor.copy(alpha = 0.2f)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = message.senderName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = lightCreamColor
+                )
+                Text(
+                    text = formatter.format(Date(message.timestamp)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = lightCreamColor
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = message.text,
+                style = MaterialTheme.typography.bodyLarge,
+                color = lightCreamColor
+            )
+        }
+    }
+}
