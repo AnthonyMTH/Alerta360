@@ -1,18 +1,20 @@
 package com.unsa.alerta360.presentation.chat
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unsa.alerta360.domain.model.Message
 import com.unsa.alerta360.ui.theme.color1
 import com.unsa.alerta360.ui.theme.color2
@@ -22,13 +24,21 @@ import java.util.*
 
 @Composable
 fun ChatScreen(chatId: String?, chatName: String?) {
-    val viewModel: ChatViewModel = viewModel()
+    val viewModel: ChatViewModel = hiltViewModel()
     val messages by viewModel.messages.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
     var text by remember { mutableStateOf("") }
 
     LaunchedEffect(chatId) {
-        chatId?.let {
-            viewModel.loadMessages(it)
+        if (chatId != null) {
+            viewModel.loadMessages(chatId)
+        }
+    }
+
+    DisposableEffect(key1 = Unit) {
+        onDispose {
+            viewModel.resetChatState()
         }
     }
 
@@ -52,16 +62,44 @@ fun ChatScreen(chatId: String?, chatName: String?) {
             modifier = Modifier.padding(16.dp)
         )
 
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 8.dp),
-            reverseLayout = true
-        ) {
-            items(messages.reversed()) { message ->
-                MessageItem(message = message)
+        when (val state = uiState) {
+            is ChatUiState.Loading -> {
+                Log.d("ChatScreen", "UI State: Loading")
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = lightCreamColor)
+                }
+            }
+            is ChatUiState.Error -> {
+                Log.d("ChatScreen", "UI State: Error - ${state.message}")
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = state.message,
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+            is ChatUiState.Success -> {
+                Log.d("ChatScreen", "UI State: Success - Messages count: ${messages.size}")
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 8.dp),
+                    reverseLayout = true
+                ) {
+                    items(messages.reversed()) { message ->
+                        MessageItem(message = message)
+                    }
+                }
             }
         }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -87,7 +125,7 @@ fun ChatScreen(chatId: String?, chatName: String?) {
             )
             Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = {
-                viewModel.sendMessage(text)
+                chatId?.let { viewModel.sendMessage(it, text) }
                 text = ""
             }) {
                 Text("Send")
@@ -98,7 +136,7 @@ fun ChatScreen(chatId: String?, chatName: String?) {
 
 @Composable
 fun MessageItem(message: Message) {
-    val formatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val formatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()).apply { timeZone = TimeZone.getTimeZone("America/Lima") } }
 
     Surface(
         modifier = Modifier
@@ -115,22 +153,24 @@ fun MessageItem(message: Message) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = message.senderName,
+                    text = message.senderName ?: "Desconocido",
                     style = MaterialTheme.typography.titleMedium,
                     color = lightCreamColor
                 )
                 Text(
-                    text = formatter.format(Date(message.timestamp)),
+                    text = formatter.format(Date(message.timestamp ?: 0L)),
                     style = MaterialTheme.typography.bodySmall,
                     color = lightCreamColor
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = message.text,
-                style = MaterialTheme.typography.bodyLarge,
-                color = lightCreamColor
-            )
+            message.text?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = lightCreamColor
+                )
+            }
         }
     }
 }

@@ -120,4 +120,7 @@ dependencies {
 
     // Google Maps Utils KTX
     implementation("com.google.maps.android:maps-utils-ktx:3.4.0")
+
+    // sockets
+    implementation("io.socket:socket.io-client:2.0.0")
 }

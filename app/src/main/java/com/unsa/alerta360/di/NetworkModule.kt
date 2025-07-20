@@ -5,7 +5,9 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.unsa.alerta360.data.network.AccountApiService
 import com.unsa.alerta360.data.network.AuthInterceptor
+import com.unsa.alerta360.data.network.ChatApiService
 import com.unsa.alerta360.data.network.IncidentApi
+import com.unsa.alerta360.data.network.MessageApiService
 import com.unsa.alerta360.data.network.UserApiService
 import dagger.Module
 import dagger.Provides
@@ -75,5 +77,15 @@ object NetworkModule {
     @Singleton
     fun provideUserApiService(retrofit: Retrofit): UserApiService =
         retrofit.create(UserApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideChatApiService(retrofit: Retrofit): ChatApiService =
+        retrofit.create(ChatApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideMessageApiService(retrofit: Retrofit): MessageApiService =
+        retrofit.create(MessageApiService::class.java)
 
 }

@@ -16,13 +16,19 @@ import com.unsa.alerta360.data.local.UserPreferencesHelper
 import com.unsa.alerta360.data.local.dao.IncidentDao
 import com.unsa.alerta360.data.local.room.AppDatabase
 import com.unsa.alerta360.data.network.AccountApiService
+import com.unsa.alerta360.data.network.ChatApiService
 import com.unsa.alerta360.data.network.IncidentApi
+import com.unsa.alerta360.data.network.MessageApiService
 import com.unsa.alerta360.data.network.UserApiService
 import com.unsa.alerta360.data.repository.AccountRepositoryImpl
+import com.unsa.alerta360.data.repository.ChatRepositoryImpl
 import com.unsa.alerta360.data.repository.IncidentRepositoryImpl
+import com.unsa.alerta360.data.repository.MessageRepositoryImpl
 import com.unsa.alerta360.domain.repository.AccountRepository
+import com.unsa.alerta360.domain.repository.ChatRepository
 import com.unsa.alerta360.domain.repository.FcmRepository
 import com.unsa.alerta360.domain.repository.IncidentRepository
+import com.unsa.alerta360.domain.repository.MessageRepository
 import com.unsa.alerta360.domain.usecase.account.GetAccountDetailsUseCase
 import com.unsa.alerta360.domain.usecase.fcm.InitializeFcmUseCase
 import com.unsa.alerta360.domain.usecase.fcm.SubscribeToLocationUseCase
@@ -89,6 +95,18 @@ object RepositoryModule {
     @Singleton
     fun provideUserPreferencesHelper(@ApplicationContext context: Context): UserPreferencesHelper {
         return UserPreferencesHelper(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideChatRepository(chatApiService: ChatApiService): ChatRepository {
+        return ChatRepositoryImpl(chatApiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMessageRepository(messageApiService: MessageApiService): MessageRepository {
+        return MessageRepositoryImpl(messageApiService)
     }
 }
 
@@ -164,6 +182,5 @@ object UseCaseModule {
     fun provideUpdateNotificationPreferencesUseCase(fcmRepository: FcmRepository): UpdateNotificationPreferencesUseCase {
         return UpdateNotificationPreferencesUseCase(fcmRepository)
     }
-
 
 }

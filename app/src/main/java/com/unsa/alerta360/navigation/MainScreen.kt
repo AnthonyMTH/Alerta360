@@ -39,10 +39,7 @@ fun MainScreen(navController: NavHostController? = null, onLogout: () -> Unit = 
             //}
             composable("map") { HeatmapScreen(navController = navController!!) }
             composable("addIncident") { AddIncidentScreen(navController = mainNavController) }
-            composable("messages") { ChatListScreen(onChatClick = { chat ->
-                val encodedName = java.net.URLEncoder.encode(chat.name, "UTF-8")
-                mainNavController.navigate("chat/${chat.id}/$encodedName")
-            }) }
+            composable("messages") { ChatListScreen(navController = mainNavController) }
             composable(
                 route = "chat/{chatId}/{chatName}",
                 arguments = listOf(
