@@ -156,6 +156,7 @@ class ChatViewModel @Inject constructor(
     }
 
     fun resetChatState() {
+        currentChatId?.let { socketManager.leaveChat(it) }
         _messages.value = emptyList()
         _uiState.value = ChatUiState.Loading
         currentChatId = null

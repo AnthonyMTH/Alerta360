@@ -14,6 +14,10 @@ class SocketManager {
     private val _messageEvents = MutableSharedFlow<SocketEvent>(replay = 1)
     val messageEvents = _messageEvents.asSharedFlow()
 
+    private var _isAuthenticated: Boolean = false
+
+    fun isAuthenticated(): Boolean = _isAuthenticated
+
     fun connect(url: String, userId: String, userName: String) {
         try {
             val options = IO.Options()
@@ -71,6 +75,13 @@ class SocketManager {
         Log.d("SocketManager", "Attempting to join chat: $chatId")
     }
 
+    fun leaveChat(chatId: String) {
+        socket?.emit("leave_chat", JSONObject().apply {
+            put("chatId", chatId)
+        })
+        Log.d("SocketManager", "Attempting to leave chat: $chatId")
+    }
+
     fun sendMessage(chatId: String, text: String) {
         socket?.emit("send_message", JSONObject().apply {
             put("chatId", chatId)
@@ -86,6 +97,7 @@ class SocketManager {
 
     private val onDisconnect = Emitter.Listener {
         Log.d("SocketManager", "Socket Disconnected!")
+        _isAuthenticated = false // Reset authentication status on disconnect
         _messageEvents.tryEmit(SocketEvent.Disconnected)
     }
 
@@ -96,13 +108,16 @@ class SocketManager {
             args.joinToString()
         }
         Log.e("SocketManager", "Socket Connect Error: $error")
+        _isAuthenticated = false // Reset authentication status on error
         _messageEvents.tryEmit(SocketEvent.Error("Error de conexión: $error"))
     }
 
     private val onAuthenticated = Emitter.Listener { args ->
         val data = args[0] as? JSONObject
+        val success = data?.optBoolean("success") ?: false
+        _isAuthenticated = success // Set authentication status
         Log.d("SocketManager", "Authenticated: $data")
-        _messageEvents.tryEmit(SocketEvent.Authenticated(data?.optBoolean("success") ?: false, data?.optString("message") ?: "Unknown"))
+        _messageEvents.tryEmit(SocketEvent.Authenticated(success, data?.optString("message") ?: "Unknown"))
     }
 
     private val onJoinedChat = Emitter.Listener { args ->
