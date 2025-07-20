@@ -244,19 +244,16 @@ fun IncidentCard(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Botones de distrito y tipo de incidente
+            // Etiquetas de distrito y tipo de incidente
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Botón Distrito
-                Button(
-                    onClick = { /* TODO: Implementar acción */ },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = color2
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.height(32.dp)
+                // Etiqueta Distrito
+                Box(
+                    modifier = Modifier
+                        .background(color = color2, shape = RoundedCornerShape(20.dp))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = incidentWithUser.incident.district,
@@ -264,13 +261,12 @@ fun IncidentCard(
                         color = lightCreamColor
                     )
                 }
-                
-                // Botón Tipo de incidente
-                OutlinedButton(
-                    onClick = { /* TODO: Implementar acción */ },
-                    border = BorderStroke(1.dp, color2),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.height(32.dp)
+
+                // Etiqueta Tipo de incidente
+                Box(
+                    modifier = Modifier
+                        .border(BorderStroke(1.dp, color2), shape = RoundedCornerShape(20.dp))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = incidentWithUser.incident.incidentType,

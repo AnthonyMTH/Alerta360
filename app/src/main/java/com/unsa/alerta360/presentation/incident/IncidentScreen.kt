@@ -175,13 +175,37 @@ fun IncidentScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row {
-                        Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color.Black)) {
-                            Text(it.district)
+                        Box(
+                            modifier = Modifier
+                                .background(color = color2, shape = RoundedCornerShape(20.dp))
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = it.district,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = lightCreamColor
+                            )
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color.Black)) {
-                            Text(it.incidentType)
+                        Box(
+                            modifier = Modifier
+                                .background(color = color2, shape = RoundedCornerShape(20.dp))
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = it.incidentType,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = lightCreamColor
+                            )
                         }
+
+//                        Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color.Black)) {
+//                            Text(it.district)
+//                        }
+//                        Spacer(modifier = Modifier.width(8.dp))
+//                        Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color.Black)) {
+//                            Text(it.incidentType)
+//                        }
                     }
                 }
             }
