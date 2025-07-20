@@ -36,7 +36,7 @@ fun ChatScreen(chatId: String?, chatName: String?) {
         }
     }
 
-    DisposableEffect(key1 = Unit) {
+    DisposableEffect(chatId) {
         onDispose {
             viewModel.resetChatState()
         }

@@ -88,7 +88,11 @@ class ChatViewModel @Inject constructor(
                         try {
                             val newMessage = gson.fromJson(event.messageJson, Message::class.java)
                             _messages.update { currentMessages ->
-                                (currentMessages + newMessage).sortedBy { it.timestamp ?: 0L }
+                                if (currentMessages.any { it.id == newMessage.id }) {
+                                    currentMessages // No agregar si ya existe
+                                } else {
+                                    (currentMessages + newMessage).sortedBy { it.timestamp ?: 0L }
+                                }
                             }
                             _uiState.value = ChatUiState.Success
                             Log.d("ChatViewModel", "UI State set to Success after new message")
@@ -98,17 +102,21 @@ class ChatViewModel @Inject constructor(
                         }
                     }
                     is SocketEvent.RecentMessages -> {
-                        Log.d("ChatViewModel", "Recent messages received: ${event.messagesJson.size}")
-                        try {
-                            val recentMessages = event.messagesJson.map { messageJsonString ->
-                                gson.fromJson(messageJsonString, Message::class.java)
+                        if (event.chatId == currentChatId) {
+                            Log.d("ChatViewModel", "Recent messages for current chat received: ${event.messagesJson.size}")
+                            try {
+                                val recentMessages = event.messagesJson.map { messageJsonString ->
+                                    gson.fromJson(messageJsonString, Message::class.java)
+                                }
+                                _messages.update { recentMessages.sortedBy { it.timestamp ?: 0L } }
+                                _uiState.value = ChatUiState.Success
+                                Log.d("ChatViewModel", "UI State set to Success after recent messages")
+                            } catch (e: Exception) {
+                                Log.e("ChatViewModel", "Error parsing recent messages JSON: ${e.message}", e)
+                                _uiState.value = ChatUiState.Error("Error al procesar mensajes recientes: ${e.message}")
                             }
-                            _messages.update { recentMessages.sortedBy { it.timestamp ?: 0L } }
-                            _uiState.value = ChatUiState.Success
-                            Log.d("ChatViewModel", "UI State set to Success after recent messages")
-                        } catch (e: Exception) {
-                            Log.e("ChatViewModel", "Error parsing recent messages JSON: ${e.message}", e)
-                            _uiState.value = ChatUiState.Error("Error al procesar mensajes recientes: ${e.message}")
+                        } else {
+                            Log.d("ChatViewModel", "Ignoring recent messages for old chat: ${event.chatId}")
                         }
                     }
                     is SocketEvent.Error -> {
@@ -126,17 +134,20 @@ class ChatViewModel @Inject constructor(
     }
 
     fun loadMessages(chatId: String) {
-        currentChatId = chatId // Store current chat ID
-        _uiState.value = ChatUiState.Loading // Always show loading when a new chat is loaded
+        if (currentChatId != null && currentChatId != chatId) {
+            socketManager.leaveChat(currentChatId!!)
+        }
 
-        // If socket is already connected and authenticated, join chat immediately
-        if (socketManager.socket?.connected() == true) {
-            Log.d("ChatViewModel", "Socket connected and authenticated, joining chat: $chatId")
+        currentChatId = chatId
+        _messages.value = emptyList()
+        _uiState.value = ChatUiState.Loading
+
+        if (socketManager.isAuthenticated()) {
+            Log.d("ChatViewModel", "Socket already authenticated, joining chat: $chatId")
             socketManager.joinChat(chatId)
         } else {
-            Log.d("ChatViewModel", "Socket not connected or not authenticated, waiting for connection/auth to join chat: $chatId")
-            // The socket connection and authentication will happen in init block,
-            // and then it will join the chat via the Authenticated event handler.
+            Log.d("ChatViewModel", "Socket not authenticated, waiting for auth event to join chat: $chatId")
+            // La lógica en el colector de eventos se encargará de unirse al chat después de la autenticación
         }
     }
 

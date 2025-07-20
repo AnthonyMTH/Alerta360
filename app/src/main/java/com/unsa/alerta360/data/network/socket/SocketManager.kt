@@ -148,6 +148,11 @@ class SocketManager {
             Log.e("SocketManager", "Recent Messages data is null or not JSONObject")
             return@Listener
         }
+        val chatId = data.optString("chatId")
+        if (chatId.isNullOrEmpty()) {
+            Log.e("SocketManager", "Recent Messages chatId is null or empty: $data")
+            return@Listener
+        }
         val messagesArray = data.optJSONArray("messages")
         if (messagesArray == null) {
             Log.e("SocketManager", "Recent Messages 'messages' field is null or not JSONArray: $data")
@@ -157,7 +162,7 @@ class SocketManager {
         for (i in 0 until messagesArray.length()) {
             messagesList.add(messagesArray.getJSONObject(i).toString())
         }
-        _messageEvents.tryEmit(SocketEvent.RecentMessages(messagesList))
+        _messageEvents.tryEmit(SocketEvent.RecentMessages(chatId, messagesList))
         Log.d("SocketManager", "RecentMessages event sent to Channel.")
     }
 
@@ -186,7 +191,7 @@ sealed class SocketEvent {
     data class Authenticated(val success: Boolean, val message: String) : SocketEvent()
     data class JoinedChat(val chatId: String, val chatName: String) : SocketEvent()
     data class NewMessage(val messageJson: String) : SocketEvent()
-    data class RecentMessages(val messagesJson: List<String>) : SocketEvent()
+    data class RecentMessages(val chatId: String, val messagesJson: List<String>) : SocketEvent()
     data class Error(val message: String) : SocketEvent()
     data class ChatUpdated(val chatId: String, val lastMessageJson: String?, val messageCount: Int) : SocketEvent()
 }
