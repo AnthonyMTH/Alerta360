@@ -168,42 +168,42 @@ fun ChatCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                chat.lastMessage?.let { lastMessage ->
-                    Text(
-                        text = "${lastMessage.senderName ?: ""}: ${lastMessage.text ?: ""}",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = Color.Black.copy(alpha = 0.7f)
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                } ?: run {
-                    Text(
-                        text = "No hay mensajes aún",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = Color.Black.copy(alpha = 0.7f)
-                        )
-                    )
-                }
+//                Spacer(modifier = Modifier.height(4.dp))
+//                chat.lastMessage?.let { lastMessage ->
+//                    Text(
+//                        text = "${lastMessage.senderName ?: ""}: ${lastMessage.text ?: ""}",
+//                        style = MaterialTheme.typography.bodyMedium.copy(
+//                            color = Color.Black.copy(alpha = 0.7f)
+//                        ),
+//                        maxLines = 1,
+//                        overflow = TextOverflow.Ellipsis
+//                    )
+//                } ?: run {
+//                    Text(
+//                        text = "No hay mensajes aún",
+//                        style = MaterialTheme.typography.bodyMedium.copy(
+//                            color = Color.Black.copy(alpha = 0.7f)
+//                        )
+//                    )
+//                }
             }
 
-            chat.messageCount.takeIf { it > 0 }?.let { count ->
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(Color.Red),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = count.toString(),
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+//            chat.messageCount.takeIf { it > 0 }?.let { count ->
+//                Box(
+//                    modifier = Modifier
+//                        .size(24.dp)
+//                        .clip(CircleShape)
+//                        .background(Color.Red),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    Text(
+//                        text = count.toString(),
+//                        color = Color.White,
+//                        fontSize = 12.sp,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                }
+//            }
         }
     }
 }
