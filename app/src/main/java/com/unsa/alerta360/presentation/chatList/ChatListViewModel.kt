@@ -49,10 +49,10 @@ class ChatListViewModel @Inject constructor(
         viewModelScope.launch {
             val userId = getCurrentUserUseCase()!!.uid
             val userDetails = getDetailsUserUseCase(userId)
-            val userName = userDetails.first_name ?: "Usuario" // Default if null
+            val userName = userDetails.first_name ?: "Usuario" // Default si es null
 
             // TODO: Replace with your actual backend WebSocket URL
-            val socketUrl = "http://10.0.2.2:5000" // Example: Replace with your server IP and port
+            val socketUrl = "http://10.0.2.2:5000"
             socketManager.connect(socketUrl, userId, userName)
 
             socketManager.messageEvents.collect { event ->
