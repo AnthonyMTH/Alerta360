@@ -7,6 +7,7 @@ import io.socket.emitter.Emitter
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import org.json.JSONObject
+import kotlinx.coroutines.*
 
 class SocketManager {
 
@@ -15,46 +16,101 @@ class SocketManager {
     val messageEvents = _messageEvents.asSharedFlow()
 
     private var _isAuthenticated: Boolean = false
+    private var _isConnected: Boolean = false
+    private var authJob: Job? = null
+    private var connectionJob: Job? = null
 
     fun isAuthenticated(): Boolean = _isAuthenticated
+    fun isConnected(): Boolean = _isConnected
 
     fun connect(url: String, userId: String, userName: String) {
-        try {
-            val options = IO.Options()
-            options.forceNew = true
-            options.reconnection = true
-            options.reconnectionAttempts = 5
-            options.reconnectionDelay = 1000
-            options.timeout = 10000 // connect timeout
+        // Cancelar cualquier intento de conexión existente
+        connectionJob?.cancel()
+        authJob?.cancel()
 
-            socket = IO.socket(url, options)
+        connectionJob = CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val options = IO.Options().apply {
+                    forceNew = true
+                    reconnection = true
+                    reconnectionAttempts = 5
+                    reconnectionDelay = 1000
+                    timeout = 15000
+                }
 
-            socket?.on(Socket.EVENT_CONNECT, onConnect)
-            socket?.on(Socket.EVENT_DISCONNECT, onDisconnect)
-            socket?.on(Socket.EVENT_CONNECT_ERROR, onConnectError)
-            socket?.on("authenticated", onAuthenticated)
-            socket?.on("joined_chat", onJoinedChat)
-            socket?.on("new_message", onNewMessage)
-            socket?.on("recent_messages", onRecentMessages)
-            socket?.on("error", onError)
+                socket = IO.socket(url, options)
 
-            socket?.connect()
+                socket?.on(Socket.EVENT_CONNECT, onConnect)
+                socket?.on(Socket.EVENT_DISCONNECT, onDisconnect)
+                socket?.on(Socket.EVENT_CONNECT_ERROR, onConnectError)
+                socket?.on("authenticated", onAuthenticated)
+                socket?.on("joined_chat", onJoinedChat)
+                socket?.on("new_message", onNewMessage)
+                socket?.on("recent_messages", onRecentMessages)
+                socket?.on("error", onError)
 
-            // Authenticate after connection
-            socket?.emit("authenticate", JSONObject().apply {
-                put("userId", userId)
-                put("userName", userName)
-            })
+                socket?.connect()
 
-            Log.d("SocketManager", "Attempting to connect to $url with userId: $userId")
+                Log.d("SocketManager", "Attempting to connect to $url with userId: $userId")
 
-        } catch (e: Exception) {
-            Log.e("SocketManager", "Error connecting to socket: ${e.message}", e)
-            _messageEvents.tryEmit(SocketEvent.Error("Error de conexión: ${e.message}"))
+                // Esperar conexión con tiempo de espera
+                var attempts = 0
+                val maxAttempts = 30 // 15 seconds total (30 * 500ms)
+
+                while (!_isConnected && attempts < maxAttempts) {
+                    delay(500)
+                    attempts++
+                }
+
+                if (_isConnected) {
+                    authenticateUser(userId, userName)
+                } else {
+                    Log.e("SocketManager", "Connection timeout after 15 seconds")
+                    _messageEvents.tryEmit(SocketEvent.Error("Timeout de conexión"))
+                }
+
+            } catch (e: Exception) {
+                Log.e("SocketManager", "Error connecting to socket: ${e.message}", e)
+                _messageEvents.tryEmit(SocketEvent.Error("Error de conexión: ${e.message}"))
+            }
+        }
+    }
+
+    private fun authenticateUser(userId: String, userName: String) {
+        authJob?.cancel()
+        authJob = CoroutineScope(Dispatchers.IO).launch {
+            try {
+                socket?.emit("authenticate", JSONObject().apply {
+                    put("userId", userId)
+                    put("userName", userName)
+                })
+
+                Log.d("SocketManager", "Authentication request sent for userId: $userId")
+
+                var attempts = 0
+                val maxAttempts = 20 // 10 seconds total (20 * 500ms)
+
+                while (!_isAuthenticated && _isConnected && attempts < maxAttempts) {
+                    delay(500)
+                    attempts++
+                }
+
+                if (!_isAuthenticated && _isConnected) {
+                    Log.e("SocketManager", "Authentication timeout")
+                    _messageEvents.tryEmit(SocketEvent.Error("Timeout de autenticación"))
+                }
+
+            } catch (e: Exception) {
+                Log.e("SocketManager", "Error during authentication: ${e.message}", e)
+                _messageEvents.tryEmit(SocketEvent.Error("Error de autenticación: ${e.message}"))
+            }
         }
     }
 
     fun disconnect() {
+        connectionJob?.cancel()
+        authJob?.cancel()
+
         socket?.disconnect()
         socket?.off(Socket.EVENT_CONNECT, onConnect)
         socket?.off(Socket.EVENT_DISCONNECT, onDisconnect)
@@ -65,10 +121,20 @@ class SocketManager {
         socket?.off("recent_messages", onRecentMessages)
         socket?.off("error", onError)
         socket = null
+
+        _isConnected = false
+        _isAuthenticated = false
+
         Log.d("SocketManager", "Socket disconnected.")
     }
 
     fun joinChat(chatId: String) {
+        if (!_isAuthenticated) {
+            Log.e("SocketManager", "Cannot join chat: not authenticated")
+            _messageEvents.tryEmit(SocketEvent.Error("No autenticado para unirse al chat"))
+            return
+        }
+
         socket?.emit("join_chat", JSONObject().apply {
             put("chatId", chatId)
         })
@@ -76,6 +142,11 @@ class SocketManager {
     }
 
     fun leaveChat(chatId: String) {
+        if (!_isAuthenticated) {
+            Log.w("SocketManager", "Cannot leave chat: not authenticated")
+            return
+        }
+
         socket?.emit("leave_chat", JSONObject().apply {
             put("chatId", chatId)
         })
@@ -83,6 +154,12 @@ class SocketManager {
     }
 
     fun sendMessage(chatId: String, text: String) {
+        if (!_isAuthenticated) {
+            Log.e("SocketManager", "Cannot send message: not authenticated")
+            _messageEvents.tryEmit(SocketEvent.Error("No autenticado para enviar mensaje"))
+            return
+        }
+
         socket?.emit("send_message", JSONObject().apply {
             put("chatId", chatId)
             put("text", text)
@@ -92,12 +169,14 @@ class SocketManager {
 
     private val onConnect = Emitter.Listener {
         Log.d("SocketManager", "Socket Connected!")
+        _isConnected = true
         _messageEvents.tryEmit(SocketEvent.Connected)
     }
 
     private val onDisconnect = Emitter.Listener {
         Log.d("SocketManager", "Socket Disconnected!")
-        _isAuthenticated = false // Reset authentication status on disconnect
+        _isAuthenticated = false
+        _isConnected = false
         _messageEvents.tryEmit(SocketEvent.Disconnected)
     }
 
@@ -108,14 +187,15 @@ class SocketManager {
             args.joinToString()
         }
         Log.e("SocketManager", "Socket Connect Error: $error")
-        _isAuthenticated = false // Reset authentication status on error
+        _isAuthenticated = false
+        _isConnected = false
         _messageEvents.tryEmit(SocketEvent.Error("Error de conexión: $error"))
     }
 
     private val onAuthenticated = Emitter.Listener { args ->
         val data = args[0] as? JSONObject
         val success = data?.optBoolean("success") ?: false
-        _isAuthenticated = success // Set authentication status
+        _isAuthenticated = success
         Log.d("SocketManager", "Authenticated: $data")
         _messageEvents.tryEmit(SocketEvent.Authenticated(success, data?.optString("message") ?: "Unknown"))
     }

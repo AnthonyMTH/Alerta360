@@ -69,32 +69,91 @@ fun ChatScreen(chatId: String?, chatName: String?) {
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = lightCreamColor)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator(color = lightCreamColor)
+                        Text(
+                            text = "Conectando al chat...",
+                            color = lightCreamColor,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             }
             is ChatUiState.Error -> {
                 Log.d("ChatScreen", "UI State: Error - ${state.message}")
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = state.message,
-                        color = Color.Red,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                if (state.message.contains("StandaloneCoroutine was cancelled")) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator(color = lightCreamColor)
+                            Text(
+                                text = "Cargando mensajes...",
+                                color = lightCreamColor,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = state.message,
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(horizontal = 32.dp)
+                            )
+                            Button(
+                                onClick = { chatId?.let { viewModel.loadMessages(it) } },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = lightCreamColor.copy(alpha = 0.2f),
+                                    contentColor = lightCreamColor
+                                )
+                            ) {
+                                Text("Reintentar conexión")
+                            }
+                        }
+                    }
                 }
             }
             is ChatUiState.Success -> {
                 Log.d("ChatScreen", "UI State: Success - Messages count: ${messages.size}")
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp),
-                    reverseLayout = true
-                ) {
-                    items(messages.reversed()) { message ->
-                        MessageItem(message = message)
+                if (messages.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No hay mensajes aún",
+                            color = lightCreamColor,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp),
+                        reverseLayout = true
+                    ) {
+                        items(messages.reversed()) { message ->
+                            MessageItem(message = message)
+                        }
                     }
                 }
             }
