@@ -34,6 +34,7 @@ Alerta360 es una aplicación móvil diseñada para la seguridad ciudadana. Permi
 
 
 ### Arquitectura
+<img width="989" height="635" alt="arquitectura" src="https://github.com/user-attachments/assets/a77e865b-9a7c-441e-82d9-9e2a8e9dc801" />
 
 **Frontend (Android - Jetpack Compose + MVVM)**
 
@@ -63,8 +64,12 @@ La arquitectura está optimizada para tiempo real, donde los incidentes reportad
 * Después de descargar el proyecto del repositorio GitHub y antes de ejecutarlo se debe descargar el archivo que se encuentra en el siguiente enlace:
   https://drive.google.com/file/d/17uzcdNJXBAqlpBp2b8YW4XLR8DpmzLzO/view?usp=sharing
 * El archivo “google-services.json” una vez descargado debe ser colocado en la altura de “app/” como se muestra en la imagen:
+  <img width="405" height="395" alt="json" src="https://github.com/user-attachments/assets/6f3931f3-e713-478b-b0ee-6d38a49a31dc" />
+
 * Actualmente, el registro de usuarios se encuentra funcionando pero si no desea crear un nuevo usuario puede usar el siguiente para ingresar:
     * Correo: aticonaha@unsa.edu.pe
     * Contraseña: 1234567890
 * Antes de ejecutar verificar que el servicio backend esté ejecutándose
-  https://backend-alerta360.onrender.com/ 
+  https://backend-alerta360.onrender.com/
+  <img width="759" height="560" alt="image" src="https://github.com/user-attachments/assets/8045bc06-706e-4764-8daa-d8fefa238254" />
+
