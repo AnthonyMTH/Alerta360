@@ -1,4 +1,4 @@
-x# Alerta360
+# Alerta360
 ## Integrantes
 - Carrillo Daza, Barbara Rubi
 - Diaz Portilla, Carlo Rodrigo
@@ -6,76 +6,65 @@ x# Alerta360
 - Ticona Hareth, Anthony Joaquin
 
 
+## Funcionalidad
 
-# Trabajo en clase 26/06/2025
+Alerta360 es una aplicación móvil diseñada para la seguridad ciudadana. Permite a los usuarios reportar y visualizar incidentes en tiempo real, fomentando la colaboración y la conciencia comunitaria.
 
-## 1. Creación de entidad y DAO (Carrillo Daza, Barbara Rubi)
+### Características Principales
 
-Para representar cada incidente en la base de datos local:
+**Autenticación de Usuarios:**
+*   Registro e inicio de sesión en la aplicación.
+*   Gestión de la cuenta de usuario.
 
-1. **Definición de la entidad**  
-   - Se creó una clase de dominio `Incident` anotada con `@Entity`.  
-   - Incluye propiedades como `id`, `title`, `description`, `incidentType`, `ubication`, `geolocation`, `evidences` (lista), `district`, `userId`, `createdAt`, `updatedAt`, `version` y `synced` para identificar el estado del registro.
-2. **Convertidores de tipos complejos**  
-   - Dado que Room sólo sabe manejar tipos primitivos, se implementaron convertidores (`TypeConverter`) para transformar listas de cadenas a JSON y fechas (por ejemplo `Instant`) a `Long`.
-3. **Interfaz DAO**  
-   - Se definió `IncidentDao` con operaciones esenciales:
-     - Un método para **observar** todos los incidentes (devolviendo un `Flow<List<Incident>>` ordenados por fecha de actualización).
-     - Un método para **insertar/reemplazar** lotes de incidentes.
-     - Métodos auxiliares para **consultar y guardar** el token de sincronización (`ETag`) en una tabla de estado.
+**Gestión de Incidentes:**
+*   **Creación de Incidentes:** Los usuarios pueden reportar nuevos incidentes, proporcionando detalles como título, descripción, tipo de incidente y evidencias fotográficas.
+*   **Visualización de Incidentes:** Los incidentes reportados se muestran en una lista en la pantalla principal.
+*   **Mapa de Calor (Heatmap):** Visualización de incidentes en un mapa, permitiendo a los usuarios identificar zonas de mayor incidencia, así como ver directamente el incidente desde la vista de marcadores.
 
----
+**Chat en Tiempo Real:**
+*   Comunicación directa entre usuarios a través de un sistema de chat integrado.
+*   Lista de conversaciones activas.
 
-## 2. Guardar en local los incidentes (Diaz Portilla, Carlo Rodrigo)
+**Notificaciones Push:**
+*   Recepción de notificaciones en tiempo real sobre nuevos incidentes y otras alertas relevantes.
+*   Las notificaciones pueden abrir directamente la pantalla del incidente correspondiente.
 
-La persistencia local se organizó en dos capas:
+**Servicios de Localización:**
+*   Uso de la geolocalización para reportar la ubicación exacta de los incidentes.
 
-1. **Repositorio local**  
-   - Envuelve al DAO y expone funciones como `getAllIncidents()` (retorna un flujo reactivo) y `saveIncidents(List<Incident>)`.
-   - También maneja la obtención y almacenamiento del `ETag` para sincronización incremental.
-2. **Casos de uso (Use Cases)**  
-   - **GetAllIncidentsUseCase**: devuelve el flujo de incidentes para que la capa de presentación lo consuma.  
-   - **CreateIncidentUseCase**: gestiona la creación de un nuevo incidente contra la API remota y, en caso de éxito, lo guarda en la base de datos local.
 
-De esta manera, cualquier cambio en la base de datos (inserción o actualización) se propaga automáticamente a la UI.
+### Arquitectura
 
----
+**Frontend (Android - Jetpack Compose + MVVM)**
 
-## 3. Sincronización con WorkManager (Mamani Cañari, Gabriel Antony)
+* Utiliza Dagger-Hilt para inyección de dependencias
+  Implementa el patrón MVVM con capas bien separadas (Presentation, Domain, Data)
+  Maneja la interfaz de usuario para reportes de incidentes, mapas de calor y chat
 
-Para mantener los datos actualizados sin intervención del usuario:
+**Backend (Node.js + Express)**
 
-1. **Definición del Worker**  
-   - Se implementó un `CoroutineWorker` (`SyncIncidentsWorker`) que:
-     - Lee el `ETag` actual desde la base de datos.
-     - Llama al endpoint remoto para solicitar nuevos incidentes (pasando el `ETag` para evitar datos duplicados).
-     - Mapea los DTO recibidos a entidades de dominio.
-     - Inserta los incidentes en la base de datos y actualiza el `ETag` si hay uno nuevo.
-2. **Programación periódica**  
-   - Se configuró un trabajo periódico con un intervalo mínimo (15 minutos) usando `PeriodicWorkRequest`.
-   - Se encola como trabajo único con una política de reemplazo para evitar duplicar instancias.
-3. **Manejo de errores**  
-   - En caso de fallo de red o de base de datos, el Worker devuelve `Result.retry()` para que WorkManager reintente automáticamente.
+* API REST para operaciones CRUD de incidentes y gestión de usuarios
+  Integra Socket.io para comunicación bidireccional en tiempo real (chat y notificaciones push)
 
----
+**Base de Datos (MongoDB Atlas)**
 
-## 4. Conexión con UI e instalación de Room (Ticona Hareth, Anthony Joaquin)
+* Almacena información de usuarios, incidentes reportados y conversaciones de chat
+  Permite consultas geoespaciales para el mapa de calor
 
-Para exponer los datos en pantalla usando Jetpack Compose y MVVM:
+**Servicios Externos**
 
-1. **Instalación de Room**  
-   - Se añadió la dependencia de Room Runtime y Room KTX al `build.gradle`.  
-   - Se habilitó el procesador de anotaciones (KSP/KAPT) para generar el código de acceso.
-2. **ViewModel**  
-   - Inyecta el caso de uso `GetAllIncidentsUseCase` y expone un `StateFlow<List<Incident>>`.  
-   - Utiliza `stateIn` y `viewModelScope` para mantener los datos activos mientras la UI esté suscrita.
-3. **Composable**  
-   - La pantalla principal suscribe el flujo con `collectAsState()` y muestra los incidentes en un `LazyColumn`.  
-   - Cada elemento renderiza título, descripción y otros campos relevantes de forma declarativa.
+* Firebase Cloud Messaging: Maneja las notificaciones push cuando ocurren nuevos incidentes
+* Firebase Authentication: Gestiona el registro y autenticación de usuarios
+* Google Maps API: Proporciona funcionalidad de mapas y geolocalización para reportar ubicaciones exactas
 
-## 5. Pregunta (Todos)
+La arquitectura está optimizada para tiempo real, donde los incidentes reportados se propagan inmediatamente a todos los usuarios conectados, y el sistema de chat permite comunicación instantánea entre la comunidad para mejorar la respuesta colaborativa ante situaciones de seguridad.
 
-**¿Cómo se podría sincronizar cuando un dato se modificó en el backend? Por ejemplo, tenemos una app para compra de pasajes de bus, el usuario selecciona un asiento y mientras llena algunos datos, otro usuario compro el asiento?**
-A través de la verificación de disponibilidad en tiempo real justo antes de confirmar la transacción. Cada recurso (por ejemplo, asiento) tendría asignado un identificador de versión o timestamp que se envía al cliente cuando este selecciona el asiento. Al intentar reservarlo, el cliente incluye esa versión en su petición, entonces, el servidor compara la versión recibida con la actual; si coinciden, se confirma la reserva; si no, se rechaza y se informa al usuario que el asiento ya no está disponible.
-
----
+## Notas
+* Después de descargar el proyecto del repositorio GitHub y antes de ejecutarlo se debe descargar el archivo que se encuentra en el siguiente enlace:
+  https://drive.google.com/file/d/17uzcdNJXBAqlpBp2b8YW4XLR8DpmzLzO/view?usp=sharing
+* El archivo “google-services.json” una vez descargado debe ser colocado en la altura de “app/” como se muestra en la imagen:
+* Actualmente, el registro de usuarios se encuentra funcionando pero si no desea crear un nuevo usuario puede usar el siguiente para ingresar:
+    * Correo: aticonaha@unsa.edu.pe
+    * Contraseña: 1234567890
+* Antes de ejecutar verificar que el servicio backend esté ejecutándose
+  https://backend-alerta360.onrender.com/ 
