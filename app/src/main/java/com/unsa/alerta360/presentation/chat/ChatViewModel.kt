@@ -66,8 +66,9 @@ class ChatViewModel @Inject constructor(
                 val userDetails = getDetailsUserUseCase(userId)
                 val userName = userDetails.first_name ?: "Usuario"
 
-                // TODO: Replace with your actual backend WebSocket URL
-                val socketUrl = "http://10.0.2.2:5000"
+                //val socketUrl = "http://10.0.2.2:5000"
+                val socketUrl = "https://backend-alerta360.onrender.com"
+
                 socketManager.connect(socketUrl, userId, userName)
                 Log.d("ChatViewModel", "Socket connection initiated.")
 
